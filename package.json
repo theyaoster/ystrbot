@@ -1,0 +1,37 @@
+{
+  "name": "ystrbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "types": "index.d.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "concurrently \"tsc -w\" \"nodemon build/index.js\"",
+    "deploy:commands": "tsc && node build/scripts/deploy-commands.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.14.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "concurrently": "^7.0.0",
+    "nodemon": "^2.0.15",
+    "typescript": "^4.6.2"
+  },
+  "dependencies": {
+    "@discordjs/rest": "^0.3.0",
+    "@fightmegg/riot-api": "^0.0.8",
+    "@types/underscore": "^1.11.4",
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "firebase": "^9.6.8",
+    "queue-typescript": "^1.0.1",
+    "riot-valorant-api": "^0.2.3",
+    "underscore": "^1.13.2"
+  }
+}

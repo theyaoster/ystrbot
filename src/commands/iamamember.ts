@@ -1,0 +1,19 @@
+import { SlashCommandBuilder } from "@discordjs/builders"
+import { CommandInteraction, Client, GuildMemberRoleManager } from "discord.js";
+import { discordConfig } from "../config/discord-config";
+import { findEmoji } from "../lib/utils";
+
+export const data = new SlashCommandBuilder()
+    .setName("iamafragl0rd")
+    .setDescription("Declare yourself a fragl0rd.")
+
+export async function execute(interaction: CommandInteraction, client: Client) {
+    const roles = interaction.member?.roles as GuildMemberRoleManager
+    if (roles.cache.has(discordConfig.VAL_ROLE_ID)) {
+        return interaction.reply({ content: "no shit", ephemeral: true })
+    } else {
+        const roleObj = interaction.guild?.roles.cache.get(discordConfig.VAL_ROLE_ID)!
+        roles.add(roleObj).catch(console.error)
+        return interaction.reply({ content: `yes you are! ${findEmoji("kjoy", client)}`, ephemeral: true })
+    }
+}
