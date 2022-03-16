@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node build/index.js",
     "dev": "concurrently \"tsc -w\" \"nodemon build/index.js\"",
-    "deploy:commands": "tsc && node build/scripts/deploy-commands.js"
+    "deploy:commands": "tsc && node build/scripts/deploy-commands.js",
+    "listen": "node build/listen.js",
+    "dev:listen": "concurrently \"tsc -w\" \"nodemon build/listen.js\""
   },
   "keywords": [],
   "author": "",
@@ -26,12 +28,12 @@
     "@discordjs/rest": "^0.3.0",
     "@fightmegg/riot-api": "^0.0.8",
     "@types/underscore": "^1.11.4",
+    "crypto-js": "^4.1.1",
     "discord.js": "^13.6.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "firebase": "^9.6.8",
     "queue-typescript": "^1.0.1",
-    "riot-valorant-api": "^0.2.3",
     "underscore": "^1.13.2"
   }
 }

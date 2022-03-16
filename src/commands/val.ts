@@ -9,7 +9,6 @@ const MIN_DELAY = 1 // 1 minute
 const MAX_DELAY = 24 * 60 // 1 day max
 const MIN_TTL = 1 // 1 minute
 const MAX_TTL = 12 * 60 // 12 hours max
-// const REPLY_TTL = 3 // seconds
 
 export const data = new SlashCommandBuilder()
     .setName("val")
@@ -51,13 +50,12 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     const delayMinutes = delayRaw || NaN // NaN means no delay (default)
     const ttlRaw = interaction.options.getInteger("ttl_in_min")
     if (ttlRaw && (ttlRaw < MIN_TTL || ttlRaw > MAX_TTL)) {
-        return interaction.reply(`TTL must be between ${MIN_TTL} and ${MAX_TTL} (inclusive).`)
+        return interaction.reply({ content: `TTL must be between ${MIN_TTL} and ${MAX_TTL} (inclusive).`, ephemeral: true })
     }
     const ttlMinutes = ttlRaw || NaN // NaN means infinite TTL (default)
 
-    // Reply to user
-    await interaction.reply(`ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${delayMinutes} minutes**`}.`)
-    interaction.deleteReply()
+    // Reply to user (and then delete the reply)
+    interaction.reply(`ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${delayMinutes} minutes**`}.`).then(_ => interaction.deleteReply())
     
     let notifMessage : Message | undefined = undefined
     let originalNotifContent : string | undefined = undefined
