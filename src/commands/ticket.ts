@@ -3,6 +3,7 @@ import { Client, CommandInteraction, TextChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
 import { genericOops } from "./error-responses"
 import { commandFromTextChannel } from "../lib/utils"
+import { getTicketOverridesFromFirestore } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
@@ -14,9 +15,11 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         return
     }
     
-    const feedbackChannel = client.channels.cache.get(discordConfig.FEEDBACK_CHANNEL_ID)!
+    const ticketOverrides = await getTicketOverridesFromFirestore()
+    const channelId = interaction.user.id in ticketOverrides ? ticketOverrides[interaction.user.id] : discordConfig.FEEDBACK_CHANNEL_ID
+    const feedbackChannel = client.channels.cache.get(channelId)
     if (!feedbackChannel) {
-        console.error("Failed to find channel using FEEDBACK_CHANNEL_ID.")
+        console.error(`Failed to find channel with ID ${channelId}!`)
         return genericOops(interaction)
     } else {
         // Create a new thread for the ticket

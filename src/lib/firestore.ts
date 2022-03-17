@@ -5,6 +5,7 @@ import config from "../config/config"
 
 const CONFIG_COLLECTION = "configuration"
 const DISCORD_ELEMENTS_DOC = "discord_elements"
+const TICKET_OVERRIDES_DOC = "ticket_overrides"
 
 const KEYWORD_TO_EMOJI_COLLECTION = "keyword_to_emoji_ids"
 const SUBSTITUTIONS_DOC = "substitutions"
@@ -35,8 +36,9 @@ const db = getFirestore(app)
 
 // In-memory caches
 let fsConfigs : { [key: string] : string }
+let ticketOverrides : { [key: string] : string }
 let substitutions : { [alternative: string] : string }
-let keyword_to_emoji_ids : { [agent: string] : string[] }
+let keywordToEmojiIDs : { [agent: string] : string[] }
 
 // Helper for retrieving a field's value from a doc
 async function retrieveField(db: Firestore, collection: string, docId: string, field = DEFAULT_ROOT_KEY) {
@@ -52,6 +54,14 @@ export async function getConfigsFromFirestore() {
     return fsConfigs
 }
 
+// Load config
+export async function getTicketOverridesFromFirestore() {
+    if (!ticketOverrides) {
+        ticketOverrides = await retrieveField(db, CONFIG_COLLECTION, TICKET_OVERRIDES_DOC)
+    }
+    return ticketOverrides
+}
+
 // Load map of substitutions
 export async function getKeywordSubstitutions() {
     if (!substitutions) {
@@ -62,10 +72,10 @@ export async function getKeywordSubstitutions() {
 
 // Load map of keyword to emoji lists
 export async function getKeywordEmojiLists() {
-    if (!keyword_to_emoji_ids) {
-        keyword_to_emoji_ids = await retrieveField(db, KEYWORD_TO_EMOJI_COLLECTION, EMOJI_IDS_DOC)
+    if (!keywordToEmojiIDs) {
+        keywordToEmojiIDs = await retrieveField(db, KEYWORD_TO_EMOJI_COLLECTION, EMOJI_IDS_DOC)
     }
-    return keyword_to_emoji_ids
+    return keywordToEmojiIDs
 }
 
 // Retrieve all player statuses
