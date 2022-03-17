@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, TextChannel } from "discord.js"
+import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
 import { genericOops } from "./error-responses"
 import { commandFromTextChannel } from "../lib/utils"
-import { getTicketOverridesFromFirestore } from "../lib/firestore"
+import { getTicketOverridesFromFirestore, trackTicket } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
@@ -32,6 +32,8 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
         await thread.members.add(interaction.user)
         await thread.setLocked(true) // So only mods can unarchive
+
+        trackTicket(interaction.member as GuildMember, thread.id)
     
         const problemDescription = interaction.options.getString("description")!
         thread.send(`Submission details:\n**User**: ${interaction.user.username}\n**Description**: ${problemDescription}`)

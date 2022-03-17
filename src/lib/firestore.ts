@@ -1,7 +1,8 @@
-import { doc, getDoc, getFirestore, Firestore, updateDoc } from "firebase/firestore"
+import { doc, getDoc, getFirestore, Firestore, updateDoc, deleteField } from "firebase/firestore"
 import { initializeApp } from "firebase/app"
 import { randomBytes, createHash } from "crypto"
 import config from "../config/config"
+import { GuildMember } from "discord.js"
 
 const CONFIG_COLLECTION = "configuration"
 const DISCORD_ELEMENTS_DOC = "discord_elements"
@@ -18,6 +19,9 @@ const PLAYERS_DOC = "players"
 const OFFLINE_STATUS = "Offline"
 const STATUS_FIELD = "status"
 const SECRET_FIELD = "secret"
+
+const TICKETS_COLLECTION = "tickets"
+const AUTHORS_DOC = "authors"
 
 const TOKEN_BYTES = 16
 
@@ -129,4 +133,27 @@ export async function registerPlayer(name: string) {
     newData[name] = oldData
     updateDoc(docRef, newData)
     return token
+}
+
+// Track the author of a newly created ticket
+export async function trackTicket(author: GuildMember, ticketThreadId: string) {
+    const newData : { [_: string]: any } = {}
+    newData[ticketThreadId] = author.id
+    updateDoc(doc(db, TICKETS_COLLECTION, AUTHORS_DOC), newData)
+}
+
+// Check if the given member is the author of the given ticket
+export async function isTicketAuthor(caller: GuildMember, ticketThreadId: string) {
+    const docRef = doc(db, TICKETS_COLLECTION, AUTHORS_DOC)
+    const document = await getDoc(docRef)
+    const authorId = document.get(ticketThreadId)
+    return authorId === caller.id
+}
+
+// Delete the specified ticket from the db
+export async function removeTicket(ticketThreadId: string) {
+    const updateJson : { [_: string]: any } = {}
+    updateJson[ticketThreadId] = deleteField()
+    updateDoc(doc(db, TICKETS_COLLECTION, AUTHORS_DOC), updateJson)
+    return true
 }
