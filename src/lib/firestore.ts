@@ -58,8 +58,8 @@ export async function getConfigsFromFirestore() {
     return fsConfigs
 }
 
-// Load config
-export async function getTicketOverridesFromFirestore() {
+// Load ticket overrides (when tickets go to different channels)
+export async function getTicketOverrides() {
     if (!ticketOverrides) {
         ticketOverrides = await retrieveField(db, CONFIG_COLLECTION, TICKET_OVERRIDES_DOC)
     }

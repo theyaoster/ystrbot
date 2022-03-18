@@ -3,7 +3,7 @@ import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js
 import { discordConfig } from "../config/discord-config"
 import { genericOops } from "./error-responses"
 import { commandFromTextChannel } from "../lib/utils"
-import { getTicketOverridesFromFirestore, trackTicket } from "../lib/firestore"
+import { getTicketOverrides, trackTicket } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
@@ -15,7 +15,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         return
     }
     
-    const ticketOverrides = await getTicketOverridesFromFirestore()
+    const ticketOverrides = await getTicketOverrides()
     const channelId = interaction.user.id in ticketOverrides ? ticketOverrides[interaction.user.id] : discordConfig.FEEDBACK_CHANNEL_ID
     const feedbackChannel = client.channels.cache.get(channelId)
     if (!feedbackChannel) {
