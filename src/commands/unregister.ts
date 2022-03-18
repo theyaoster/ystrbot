@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
 import { commandFromTextChannel } from "../lib/utils"
-import { registerPlayer } from "../lib/firestore"
+import { unregisterPlayer } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
-    .setName("register")
-    .setDescription("Register yourself to get an API key for sharing your status.")
+    .setName("unregister")
+    .setDescription("Unregister yourself so you no longer share your status.")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {
@@ -13,13 +13,13 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     }
 
     const name = interaction.user.username
-    registerPlayer(name).then(token => {
+    unregisterPlayer(name).then(_ => {
         interaction.reply({
-            content: `Here are your credentials. :key: Be sure to note this down as you won't see it again:\n\n${name}\n${token}`,
+            content: `You've been unregistered. You can always register with /register again.`,
             ephemeral: true
         })
     }).catch(reason => interaction.reply({
-        content: `Failed to register due to: ${reason}`,
+        content: `Failed to unregister due to: ${reason}`,
         ephemeral: true
     }))
 }

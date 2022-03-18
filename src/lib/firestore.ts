@@ -135,6 +135,19 @@ export async function registerPlayer(name: string) {
     return token
 }
 
+// Unregister a user, removing their token and status data
+export async function unregisterPlayer(name: string) {
+    const docRef = doc(db, GAME_DATA_COLLECTION, PLAYERS_DOC)
+    const document = await getDoc(docRef)
+    if (!document.get(name)) {
+        throw new Error(`${name} is not registered.`)
+    }
+
+    const updateJson : { [_: string]: any } = {}
+    updateJson[name] = deleteField()
+    updateDoc(docRef, updateJson)
+}
+
 // Track the author of a newly created ticket
 export async function trackTicket(author: GuildMember, ticketThreadId: string) {
     const newData : { [_: string]: any } = {}

@@ -1,5 +1,5 @@
 import { CommandInteraction, TextChannel } from "discord.js"
-import { findEmoji } from "../lib/utils"
+import { findEmoji } from "./utils"
 
 export function useTextChannelOops(interaction: CommandInteraction) {
     return interaction.reply({
@@ -18,7 +18,7 @@ export function useTextChannelThreadOops(interaction: CommandInteraction, channe
 
 export function genericOops(interaction: CommandInteraction) {
     return interaction.reply({
-        content: `uh oh, something went wrong. please report this in the feedback channel! ${findEmoji("kjlove", interaction.client)}`,
+        content: `uh oh, something went wrong. please report this using /ticket! ${findEmoji("kjlove", interaction.client)}`,
         ephemeral: true
     })
 }

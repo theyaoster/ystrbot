@@ -1,6 +1,6 @@
 import { CommandInteraction, Client, GuildMember, TextChannel, Message } from "discord.js";
 import _ from "underscore";
-import { useTextChannelOops, useTextChannelThreadOops } from "../commands/error-responses";
+import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses";
 import { discordConfig } from "../config/discord-config";
 
 const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
@@ -69,19 +69,6 @@ export function isBot(member: GuildMember | null) {
     }
     return member.roles.cache.has(discordConfig.BOTS_ROLE_ID)
 }
-
-// Wrapper of try catch for brevity
-// export function tryCatch(attempt : () => any) : [any, boolean] {
-//     var result = undefined
-//     try {
-//         result = attempt()
-//     } catch (error) {
-//         console.error(error) // log error
-//         return [result, false]
-//     }
-
-//     return [result, true]
-// }
 
 // Filters custom emojis out of a string
 export function withoutEmojis(message: string) {

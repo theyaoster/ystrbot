@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
-import { genericOops } from "./error-responses"
+import { genericOops } from "../lib/error-responses"
 import { commandFromTextChannel } from "../lib/utils"
 import { getTicketOverrides, trackTicket } from "../lib/firestore"
 

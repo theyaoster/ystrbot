@@ -16,7 +16,7 @@ discordConfigBlocker().then(_ => {
     
     const rest = new REST({ version: '9' }).setToken(config.DISCORD_TOKEN)
     
-    rest.put(Routes.applicationGuildCommands(discordConfig.CLIENT_ID, discordConfig.GUILD_ID), { body: commands }).then(() => {
+    rest.put(Routes.applicationGuildCommands(discordConfig.CLIENT_ID, discordConfig.GUILD_ID), { body: commands }).then(_ => {
         console.log("Registered commands successfully.")
     }).catch(console.error)
 })

@@ -3,12 +3,12 @@ import { Client, CommandInteraction, GuildMember, ThreadChannel } from "discord.
 import { discordConfig } from "../config/discord-config"
 import { getTicketOverrides, isTicketAuthor, removeTicket } from "../lib/firestore"
 import { commandFromTextChannelThread, isAdmin } from "../lib/utils"
-import { unauthorizedOops } from "./error-responses"
+import { unauthorizedOops } from "../lib/error-responses"
 
 export const data = new SlashCommandBuilder()
     .setName("resolve_ticket")
-    .setDescription("(Admin) Resolve a feedback/suggestion request.")
-    .addBooleanOption(option => option.setName("accepted").setDescription("Whether the feedback was accepted.").setRequired(true))
+    .setDescription("(Admin) Resolve a ticket.")
+    .addBooleanOption(option => option.setName("accepted").setDescription("Whether the ticket was accepted.").setRequired(true))
  
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannelThread(interaction, client)) {
