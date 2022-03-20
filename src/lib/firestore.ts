@@ -7,6 +7,9 @@ import { GuildMember } from "discord.js"
 const CONFIG_COLLECTION = "configuration"
 const DISCORD_ELEMENTS_DOC = "discord_elements"
 const TICKET_OVERRIDES_DOC = "ticket_overrides"
+const ADMIN_DOC = "admin"
+const DEBUG_FIELD = "debug"
+const DEBUG_DATA_FIELD = "debug_data"
 
 const KEYWORD_TO_EMOJI_COLLECTION = "keyword_to_emoji_ids"
 const SUBSTITUTIONS_DOC = "substitutions"
@@ -40,6 +43,7 @@ const db = getFirestore(app)
 
 // In-memory caches
 let fsConfigs : { [key: string] : string }
+let debugData : { [key: string] : string }
 let ticketOverrides : { [key: string] : string }
 let substitutions : { [alternative: string] : string }
 let keywordToEmojiIDs : { [agent: string] : string[] }
@@ -56,6 +60,14 @@ export async function getConfigsFromFirestore() {
         fsConfigs = await retrieveField(db, CONFIG_COLLECTION, DISCORD_ELEMENTS_DOC)
     }
     return fsConfigs
+}
+
+// Load debug data
+export async function getDebugData() {
+    if (!debugData) {
+        debugData = await retrieveField(db, CONFIG_COLLECTION, ADMIN_DOC, DEBUG_DATA_FIELD)
+    }
+    return debugData
 }
 
 // Load ticket overrides (when tickets go to different channels)
@@ -169,4 +181,19 @@ export async function removeTicket(ticketThreadId: string) {
     updateJson[ticketThreadId] = deleteField()
     updateDoc(doc(db, TICKETS_COLLECTION, AUTHORS_DOC), updateJson)
     return true
+}
+
+// Check whether debug mode is on
+export async function getDebug() {
+    const document = await getDoc(doc(db, CONFIG_COLLECTION, ADMIN_DOC))
+    return document.get(DEBUG_FIELD)
+}
+
+// Toggles debug mode
+export async function toggleDebug() {
+    const currentDebug = await getDebug() as boolean
+    const newData : { [_: string]: any } = {}
+    newData[DEBUG_FIELD] = !currentDebug
+    updateDoc(doc(db, CONFIG_COLLECTION, ADMIN_DOC), newData)
+    return !currentDebug
 }

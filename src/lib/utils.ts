@@ -2,8 +2,10 @@ import { CommandInteraction, Client, GuildMember, TextChannel, Message } from "d
 import _ from "underscore";
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses";
 import { discordConfig } from "../config/discord-config";
+import { getConfigsFromFirestore, getDebugData } from "./firestore";
 
 const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
+const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
 
 // Idle wait
 export async function sleep(milliseconds: number) {
@@ -78,4 +80,17 @@ export function withoutEmojis(message: string) {
 // Gets an emoji object by name
 export function findEmoji(alias: string, client: Client) {
     return client.emojis.cache.find(e => e.name === alias)
+}
+
+// Handle all things that change when debug is flipped
+export async function handleDebug(newValue: boolean) {
+    if (newValue) {
+        // Change role ID to testing role
+        const debugData = await getDebugData()
+        discordConfig[VAL_ROLE_ID_NAME] = debugData[VAL_ROLE_ID_NAME]
+    } else {
+        // Change role ID to actual role
+        const configData = await getConfigsFromFirestore()
+        discordConfig[VAL_ROLE_ID_NAME] = configData[VAL_ROLE_ID_NAME]
+    }
 }

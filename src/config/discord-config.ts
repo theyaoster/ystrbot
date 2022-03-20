@@ -1,5 +1,5 @@
-import { getConfigsFromFirestore } from "../lib/firestore"
-import { sleep } from "../lib/utils"
+import { getConfigsFromFirestore, getDebug } from "../lib/firestore"
+import { handleDebug, sleep } from "../lib/utils"
 
 const BUFFER = 1 // seconds
 
@@ -13,6 +13,11 @@ export const discordConfigBlocker = async () => {
     return configData
 } 
 
-configPromise.then(configData => {
+configPromise.then(async configData => {
     Object.keys(configData).forEach(key => discordConfig[key] = configData[key])
+    const debugValue = await getDebug()
+    if (debugValue) {
+        console.log("Starting in debug mode...")
+        handleDebug(debugValue)
+    }
 })

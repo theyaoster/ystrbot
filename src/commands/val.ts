@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, TextChannel, GuildMember, Role, Message } from "discord.js"
+import { Client, CommandInteraction, TextChannel, GuildMember, Role, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
 import { sleep, commandFromTextChannel, findEmoji } from "../lib/utils"
@@ -54,8 +54,11 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     }
     const ttlMinutes = ttlRaw || NaN // NaN means infinite TTL (default)
 
-    // Reply to user (and then delete the reply)
-    interaction.reply(`ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${delayMinutes} minutes**`}.`).then(_ => interaction.deleteReply())
+    // Reply to user
+    interaction.reply({
+        content: `ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${delayMinutes} minutes**`}.`,
+        ephemeral: true
+    })
     
     let notifMessage : Message | undefined = undefined
     let originalNotifContent : string | undefined = undefined
@@ -69,12 +72,26 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         originalNotifContent = result[1] as string
     }
 
+    // Temporarily remove member from the gaming role - not great, but the only
+    // workaround I can think of to avoid pinging the caller
+    const memberRoles = member.roles as GuildMemberRoleManager
+    let isGamer = false
+    if (memberRoles.cache.has(discordConfig.VAL_ROLE_ID)) {
+        await memberRoles.remove(valRole)
+        isGamer = true
+    }
+
     // Ping gamers
     const baseMessage = `${username} - ${valRole}`
     pingChannel.send(baseMessage).then(async sentMessage => {
         trackFiredPing(member, sentMessage)
         if (exceedsFiredPingRateLimit(member)) {
             tempPingBan(member, pingChannel)
+        }
+
+        // If removed from the gaming role, add them back...
+        if (isGamer) {
+            memberRoles.add(valRole)
         }
 
         // Reuse delay notification if possible
