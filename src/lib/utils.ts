@@ -3,6 +3,8 @@ import _ from "underscore";
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses";
 import { discordConfig } from "../config/discord-config";
 import { getConfigsFromFirestore, getDebugData } from "./firestore";
+import converter from "number-to-words"
+const toEmoji = require("emoji-name-map") // doesn't have @types
 
 const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
 const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
@@ -93,4 +95,31 @@ export async function handleDebug(newValue: boolean) {
         const configData = await getConfigsFromFirestore()
         discordConfig[VAL_ROLE_ID_NAME] = configData[VAL_ROLE_ID_NAME]
     }
+}
+
+// The current time with just hours and minutes
+export async function currentTime(addMinutes?: number) {
+    const options: { [key: string] : string } = {
+        timeZone: "PDT",
+        timeZoneName: "short",
+        hour: "numeric",
+        minute: "numeric"
+    }
+
+    const minutes = addMinutes || 0
+    return new Date(Date.now().valueOf() + minutes * 60 * 1000).toLocaleString("en-US", options)
+}
+
+// Convert a single digit number into the appropriate unicode emoji
+export function numToEmoji(number: number) {
+    if (number < 0 || number > 9) {
+        throw new Error("Input out of range: must be between 0 and 9 inclusive.")
+    }
+
+    return toEmoji.get(converter.toWords(number))
+}
+
+// Convert an array of strings into a comma separated list, with "and" inserted as needed
+export function readableArray(array: string[]) {
+    return array.reduce((a, b, i, array) => a + (i < array.length - 1 ? ', ' : ' and ') + b)
 }

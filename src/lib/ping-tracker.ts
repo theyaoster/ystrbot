@@ -1,6 +1,7 @@
 import { Message, GuildMember, TextChannel } from "discord.js"
 import { Queue } from "queue-typescript"
 import _ from "underscore"
+import { resetPingResponses } from "./response-tracker"
 import { sleep, findEmoji } from "./utils"
 
 // Track active /val pings per user
@@ -12,9 +13,15 @@ const firedPings = new Map<GuildMember, Queue<Message>>()
 // Set of member ids that are temporarily banned from pinging
 const blocklist = new Set<GuildMember>()
 
+// Last ping message that's visible
+let latestPingMessage : Message | undefined
+let latestPinger : GuildMember | undefined
+let latestPingTimestamp : number | undefined
+
 const FIRED_PING_RATE_LIMIT_WINDOW = 2 // hours
-const FIRED_PING_RATE_LIMIT_THRESHOLD = 10
-const FIRED_PING_COOLDOWN = 15 * 1000 // seconds
+const FIRED_PING_RATE_LIMIT_THRESHOLD = 5
+const FIRED_PING_RATE_LIMIT_PENALTY = 3 // hours
+const FIRED_PING_COOLDOWN = 300 * 1000 // seconds
 const MAX_ACTIVE_PING_COUNT = 3
 
 // An "active" ping is one queued with delay that hasn't fired yet
@@ -40,21 +47,29 @@ export function exceedsActivePingLimit(member: GuildMember) {
 }
 
 // Track a ping that has just fired
-export function trackFiredPing(member: GuildMember, message: Message) {
+export function trackFiredPing(member: GuildMember, message: Message, visibleMessage?: Message) {
     if (!firedPings.has(member)) {
         firedPings.set(member, new Queue())
     }
     firedPings.get(member)!.enqueue(message)
+
+    if (visibleMessage) {
+        latestPingMessage = visibleMessage
+        latestPinger = member
+        latestPingTimestamp = Date.now().valueOf()
+    }
+
+    resetPingResponses()
 }
 
-// How many seconds of cooldown remaining a user has (or NaN if no cooldown)
-export function cooldownRemaining(member: GuildMember): number {
-    if (!firedPings.has(member) || _.isEmpty(firedPings.get(member))) {
+// How many seconds of cooldown remaining every user has (or NaN if no cooldown)
+export function cooldownRemaining(): number {
+    if (!latestPingMessage || !latestPingTimestamp) {
+        // No pings in recent memory...
         return NaN
     }
 
-    const memberQueue = firedPings.get(member)
-    const difference = Date.now().valueOf() - memberQueue!.tail.createdTimestamp
+    const difference = Date.now().valueOf() - latestPingTimestamp
     if (difference < FIRED_PING_COOLDOWN) {
         return Math.floor((FIRED_PING_COOLDOWN - difference) / 1000)
     } else {
@@ -70,7 +85,7 @@ export function exceedsFiredPingRateLimit(member: GuildMember) {
 
     // Dequeue all pings outside of the window
     const memberQueue = firedPings.get(member)!
-    while (memberQueue.length > 0 && Date.now().valueOf() - memberQueue.front.createdTimestamp > FIRED_PING_RATE_LIMIT_WINDOW * 3600 * 1000) {
+    while (memberQueue.length > 0 && Date.now().valueOf() - memberQueue.front.createdTimestamp > FIRED_PING_RATE_LIMIT_PENALTY * 3600 * 1000) {
         memberQueue.dequeue()
     }
 
@@ -82,7 +97,7 @@ export async function tempPingBan(member: GuildMember, channel: TextChannel) {
     blocklist.add(member)
     let sentMessage = undefined
     for (const hourCount of _.range(FIRED_PING_RATE_LIMIT_WINDOW, 0, -1)) {
-        const messageContent = `yeah ok ${member}... no more pinging for the next ${hourCount} hours ${findEmoji("angery", member.guild.client)}`
+        const messageContent = `take a break ${member}... no more pinging for the next ${hourCount} hours ${findEmoji("angery", member.guild.client)}`
         if (_.isUndefined(sentMessage)) {
             sentMessage = await channel.send(messageContent) 
         } else {
@@ -99,4 +114,9 @@ export async function tempPingBan(member: GuildMember, channel: TextChannel) {
 // Whether the given player is currently banned from using /val
 export function isPingBanned(member: GuildMember) {
     return blocklist.has(member)
+}
+
+// Retrieve the latest visible ping message and the time of the latest ping
+export function getLatestPing() {
+    return [latestPingMessage, latestPinger, latestPingTimestamp]
 }
