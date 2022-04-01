@@ -1,8 +1,11 @@
 import { doc, getDoc, getFirestore, Firestore, updateDoc, deleteField } from "firebase/firestore"
 import { initializeApp } from "firebase/app"
-import { randomBytes, createHash } from "crypto"
+import { createHash } from "crypto"
 import config from "../config/config"
 import { GuildMember } from "discord.js"
+const xkcd = require("xkcd-password")
+
+const PASSWORD_GENERATOR = new xkcd()
 
 const CONFIG_COLLECTION = "configuration"
 const DISCORD_ELEMENTS_DOC = "discord_elements"
@@ -25,8 +28,6 @@ const SECRET_FIELD = "secret"
 
 const TICKETS_COLLECTION = "tickets"
 const AUTHORS_DOC = "authors"
-
-const TOKEN_BYTES = 16
 
 const FIREBASE_CONFIG = {
     apiKey: config.FIRESTORE_API_KEY,
@@ -138,16 +139,17 @@ export async function registerPlayer(name: string) {
         throw new Error(`${name} is already registered.`)
     }
 
-    const oldData = document.get(name) || {}
-    const token = randomBytes(TOKEN_BYTES).toString('hex')
-    oldData[SECRET_FIELD] = createHash("sha512").update(token).digest("hex")
+    const playerData : { [_: string]: any } = {}
+    const tokenPieces = await PASSWORD_GENERATOR.generate({ numWords: 3, minLength: 4, maxLength: 5 })
+    const token = Buffer.from(tokenPieces.join("_"))
+    playerData[SECRET_FIELD] = createHash("sha512").update(token).digest("hex")
     const newData : { [_: string]: any } = {}
-    newData[name] = oldData
+    newData[name] = playerData
     updateDoc(docRef, newData)
     return token
 }
 
-// Unregister a user, removing their token and status data
+// Unregister a user, removing their token and status data (if they exist)
 export async function unregisterPlayer(name: string) {
     const docRef = doc(db, GAME_DATA_COLLECTION, PLAYERS_DOC)
     const document = await getDoc(docRef)

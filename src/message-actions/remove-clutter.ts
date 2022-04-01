@@ -22,9 +22,9 @@ export function execute(message: Message, __: Client) {
 
     const textChannel = message.channel as TextChannel
     message.delete()
-    
+
     if (!countdownActive) {
-        const promise = countdown(COUNTDOWN, 1000, textChannel, _ => `please keep this channel clean! (this will autodelete)`)
+        const promise = countdown(COUNTDOWN, 1000, textChannel, _ => "please keep this channel clean! (this will autodelete)")
         countdownActive = true
         promise.then(_ => countdownActive = false)
     }

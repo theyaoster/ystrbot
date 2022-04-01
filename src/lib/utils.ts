@@ -54,7 +54,7 @@ export async function countdown(start: number, timeUnitInMillis: number, textCha
 
         await sleep(timeUnitInMillis)
     }
-    
+
     message?.delete()
 }
 
@@ -110,13 +110,15 @@ export async function currentTime(addMinutes?: number) {
     return new Date(Date.now().valueOf() + minutes * 60 * 1000).toLocaleString("en-US", options)
 }
 
-// Convert a single digit number into the appropriate unicode emoji
-export function numToEmoji(number: number) {
-    if (number < 0 || number > 9) {
-        throw new Error("Input out of range: must be between 0 and 9 inclusive.")
+// Convert number into the appropriate unicode emoji(s)
+export function numToEmoji(number: number): string[] {
+    if (number < 0) {
+        throw new Error("Input out of range: must be nonnegative.")
+    } else if (number <= 10) {
+        return [toEmoji.get(converter.toWords(number))]
+    } else {
+        return [toEmoji.get("arrow_forward"), toEmoji.get(converter.toWords(10))]
     }
-
-    return toEmoji.get(converter.toWords(number))
 }
 
 // Convert an array of strings into a comma separated list, with "and" inserted as needed

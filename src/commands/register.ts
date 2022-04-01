@@ -15,11 +15,14 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     const name = interaction.user.username
     registerPlayer(name).then(token => {
         interaction.reply({
-            content: `Here are your credentials. :key: Be sure to note this down as you won't see it again:\n\n${name}\n${token}`,
+            content: `Here are your credentials. :key: Be sure to note this down as you won't see it again:\n\nName: "${name}"\nPassword: "${token}"`,
             ephemeral: true
         })
-    }).catch(reason => interaction.reply({
-        content: `Failed to register due to: ${reason}`,
-        ephemeral: true
-    }))
+    }).catch(reason => {
+        console.log(reason.stack)
+        interaction.reply({
+            content: `Failed to register due to: ${reason}`,
+            ephemeral: true
+        })
+    })
 }

@@ -39,6 +39,7 @@
     "number-to-words": "^1.2.4",
     "queue-typescript": "^1.0.1",
     "string-similarity": "^4.0.4",
-    "underscore": "^1.13.2"
+    "underscore": "^1.13.2",
+    "xkcd-password": "^2.0.0"
   }
 }

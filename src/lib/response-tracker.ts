@@ -1,14 +1,14 @@
 import { GuildMember, Message, TextChannel } from "discord.js"
 import _ from "underscore"
 import { getLatestPing } from "./ping-tracker"
-import { currentTime, numToEmoji, readableArray } from "./utils"
+import { numToEmoji, readableArray } from "./utils"
 
 // Mapping from ping message to set of yes responders
 let yesResponders = new Array<GuildMember>()
 let yesResponse : Message | undefined
 
 // Track a response to a ping - returns whether the response was added or removed
-export async function trackYes(pingMessage: Message, member: GuildMember, channel: TextChannel, delay?: number) {
+export async function trackYes(pingMessage: Message, member: GuildMember, channel: TextChannel) {
     const oldSize = yesResponders.length
     const index = yesResponders.indexOf(member)
     if (index >= 0) {
@@ -22,16 +22,17 @@ export async function trackYes(pingMessage: Message, member: GuildMember, channe
         channel.send(`${pinger}`).then(notification => notification.delete())
     }
 
-    const oldEmoji = numToEmoji(oldSize + 1) // Add 1 to include the pinger
-    pingMessage.reactions.cache.delete(oldEmoji)
+    // Clear out reacts
+    await pingMessage.reactions.removeAll()
     if (yesResponders.length > 0) {
-        const newEmoji = numToEmoji(yesResponders.length + 1)
-        pingMessage.react(newEmoji)
+        const newEmojis = numToEmoji(yesResponders.length + 1) // Add 1 to include the pinger
+        for (const emoji of newEmojis) {
+            await pingMessage.react(emoji)
+        }
     }
 
     const responderString = readableArray(yesResponders.map(member => member.nickname || member.user.username))
-    const delayString = delay ? ` in ${delay} (at ${currentTime(delay)})` : ""
-    const newText = `${responderString} ${yesResponders.length === 1 ? "is" : "are"} down${delayString}`
+    const newText = `${responderString} ${yesResponders.length === 1 ? "is" : "are"} down!`
     if (yesResponse) {
         if (_.isEmpty(yesResponders)) {
             // If there are now zero people down...
