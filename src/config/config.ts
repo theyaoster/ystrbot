@@ -10,6 +10,8 @@ const LOCAL_ENV_VARIABLE_NAMES = [
     "FIRESTORE_MESSAGING_SENDER_ID",
     "FIRESTORE_APP_ID",
     "FIRESTORE_MEASUREMENT_ID",
+    "FIREBASE_EMAIL",
+    "FIREBASE_SECRET"
 ]
 
 // Attempt to load variables from local .env

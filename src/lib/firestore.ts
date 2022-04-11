@@ -1,33 +1,17 @@
 import { doc, getDoc, getFirestore, Firestore, updateDoc, deleteField } from "firebase/firestore"
 import { initializeApp } from "firebase/app"
 import { createHash } from "crypto"
-import config from "../config/config"
 import { GuildMember } from "discord.js"
 const xkcd = require("xkcd-password")
 
+import config from "../config/config"
+import { stringMap } from "./data-structure-utils"
+import { Collections, Documents, Fields } from "./firestore-schema"
+
 const PASSWORD_GENERATOR = new xkcd()
 
-const CONFIG_COLLECTION = "configuration"
-const DISCORD_ELEMENTS_DOC = "discord_elements"
-const TICKET_OVERRIDES_DOC = "ticket_overrides"
-const ADMIN_DOC = "admin"
-const DEBUG_FIELD = "debug"
-const DEBUG_DATA_FIELD = "debug_data"
-
-const KEYWORD_TO_EMOJI_COLLECTION = "keyword_to_emoji_ids"
-const SUBSTITUTIONS_DOC = "substitutions"
-const EMOJI_IDS_DOC = "emoji_ids"
-
 const DEFAULT_ROOT_KEY = "data"
-
-const GAME_DATA_COLLECTION = "game_data"
-const PLAYERS_DOC = "players"
 const OFFLINE_STATUS = "Offline"
-const STATUS_FIELD = "status"
-const SECRET_FIELD = "secret"
-
-const TICKETS_COLLECTION = "tickets"
-const AUTHORS_DOC = "authors"
 
 const FIREBASE_CONFIG = {
     apiKey: config.FIRESTORE_API_KEY,
@@ -39,11 +23,11 @@ const FIREBASE_CONFIG = {
     measurementId: config.FIRESTORE_MEASUREMENT_ID
 };
 
-const app = initializeApp(FIREBASE_CONFIG)
-const db = getFirestore(app)
+// DB connection
+const db = getFirestore(initializeApp(FIREBASE_CONFIG))
 
 // In-memory caches
-let fsConfigs : { [key: string] : string }
+let firestoreConfigs : { [key: string] : string }
 let debugData : { [key: string] : string }
 let ticketOverrides : { [key: string] : string }
 let substitutions : { [alternative: string] : string }
@@ -55,57 +39,42 @@ async function retrieveField(db: Firestore, collection: string, docId: string, f
     return document.get(field)
 }
 
-// Load config
-export async function getConfigsFromFirestore() {
-    if (!fsConfigs) {
-        fsConfigs = await retrieveField(db, CONFIG_COLLECTION, DISCORD_ELEMENTS_DOC)
+// Wrapper that handles errors to avoid unhandled promise rejection errors
+export async function withHandling(methodDict: { [methodId: string]: (...args: any[]) => Promise<any> }, ...args: any[]) {
+    const methodName = Object.keys(methodDict)[0]
+    const method = methodDict[methodName]
+
+    try {
+        const output = args.length > 0 ? await method(...args) : await method()
+        return output
+    } catch (error) {
+        console.error(`Error occured while calling ${methodName}: ${error}`)
+        throw new Error(`${error}`)
     }
-    return fsConfigs
 }
 
-// Load debug data
-export async function getDebugData() {
-    if (!debugData) {
-        debugData = await retrieveField(db, CONFIG_COLLECTION, ADMIN_DOC, DEBUG_DATA_FIELD)
-    }
-    return debugData
-}
+// Helper functions that initialize caches of db data and fetch the data
+const getConfigsFromFirestoreH = async () => firestoreConfigs ??= await retrieveField(db, Collections.CONFIG, Documents.DISCORD_ELEMENTS)
+const getDebugH = async () => (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.DEBUG)
+const setDebugH = async (newValue: boolean) => updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
+const getDebugDataH = async () => debugData ??= await retrieveField(db, Collections.CONFIG, Documents.ADMIN, Fields.DEBUG_DATA)
+const getTicketOverridesH = async () => ticketOverrides ??= await retrieveField(db, Collections.CONFIG, Documents.TICKET_OVERRIDES)
+const getKeywordSubstitutionsH = async () => substitutions ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.SUBSTITUTIONS)
+const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS)
 
-// Load ticket overrides (when tickets go to different channels)
-export async function getTicketOverrides() {
-    if (!ticketOverrides) {
-        ticketOverrides = await retrieveField(db, CONFIG_COLLECTION, TICKET_OVERRIDES_DOC)
-    }
-    return ticketOverrides
-}
-
-// Load map of substitutions
-export async function getKeywordSubstitutions() {
-    if (!substitutions) {
-        substitutions = await retrieveField(db, KEYWORD_TO_EMOJI_COLLECTION, SUBSTITUTIONS_DOC)
-    }
-    return substitutions
-}
-
-// Load map of keyword to emoji lists
-export async function getKeywordEmojiLists() {
-    if (!keywordToEmojiIDs) {
-        keywordToEmojiIDs = await retrieveField(db, KEYWORD_TO_EMOJI_COLLECTION, EMOJI_IDS_DOC)
-    }
-    return keywordToEmojiIDs
-}
+// More helper functions that read or update data...
 
 // Retrieve all player statuses
-export async function getPlayerStatuses() {
-    const document = await getDoc(doc(db, GAME_DATA_COLLECTION, PLAYERS_DOC))
+async function getPlayerStatusesH() {
+    const document = await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))
     const data = document.data() // pojo
     const filteredData : { [_: string]: string } = {}
     if (!data) {
         throw new Error("Failed to retrieve player statuses!")
     } else {
         Object.keys(data).forEach(name => {
-            if (data[name] && data[name][STATUS_FIELD] && data[name][STATUS_FIELD] !== OFFLINE_STATUS) {
-                filteredData[name] = data[name][STATUS_FIELD]
+            if (data[name] && data[name][Fields.STATUS] && data[name][Fields.STATUS] !== OFFLINE_STATUS) {
+                filteredData[name] = data[name][Fields.STATUS]
             }
         })
 
@@ -114,88 +83,84 @@ export async function getPlayerStatuses() {
 }
 
 // Update the status of a single player
-export async function setPlayerStatus(name: string, status: string, token: string) {
-    const docRef = doc(db, GAME_DATA_COLLECTION, PLAYERS_DOC)
+async function setPlayerStatusH(name: string, status: string, token: string) {
+    const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
     const document = await getDoc(docRef)
     const hash = createHash("sha512").update(token).digest("hex")
 
     // Fail if registration does not exist or token hash doesn't match
-    if (!document.get(name) || document.get(name)[SECRET_FIELD] !== hash) {
+    if (!document.get(name) || document.get(name)[Fields.SECRET] !== hash) {
         throw new Error(`Authentication failed! Could not update player status.`)
     }
 
     const oldData = document.get(name)
-    oldData[STATUS_FIELD] = status
-    const newData : { [_: string]: any } = {}
-    newData[name] = oldData
+    oldData[Fields.STATUS] = status
+    const newData = stringMap([name], [oldData])
+
     return updateDoc(docRef, newData)
 }
 
 // Register a user with a token (if they don't already exist)
-export async function registerPlayer(name: string) {
-    const docRef = doc(db, GAME_DATA_COLLECTION, PLAYERS_DOC)
+export async function registerPlayerH(name: string) {
+    const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
     const document = await getDoc(docRef)
-    if (document.get(name) && document.get(name)[SECRET_FIELD]) {
+    if (document.get(name) && document.get(name)[Fields.SECRET]) {
         throw new Error(`${name} is already registered.`)
     }
 
-    const playerData : { [_: string]: any } = {}
     const tokenPieces = await PASSWORD_GENERATOR.generate({ numWords: 3, minLength: 4, maxLength: 5 })
     const token = Buffer.from(tokenPieces.join("_"))
-    playerData[SECRET_FIELD] = createHash("sha512").update(token).digest("hex")
-    const newData : { [_: string]: any } = {}
-    newData[name] = playerData
+    const playerData = stringMap([Fields.SECRET], [createHash("sha512").update(token).digest("hex")])
+    const newData = stringMap([name], [playerData])
     updateDoc(docRef, newData)
     return token
 }
 
 // Unregister a user, removing their token and status data (if they exist)
-export async function unregisterPlayer(name: string) {
-    const docRef = doc(db, GAME_DATA_COLLECTION, PLAYERS_DOC)
+export async function unregisterPlayerH(name: string) {
+    const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
     const document = await getDoc(docRef)
     if (!document.get(name)) {
         throw new Error(`${name} is not registered.`)
     }
 
-    const updateJson : { [_: string]: any } = {}
-    updateJson[name] = deleteField()
+    const updateJson = stringMap([name], [deleteField()])
     updateDoc(docRef, updateJson)
 }
 
 // Track the author of a newly created ticket
-export async function trackTicket(author: GuildMember, ticketThreadId: string) {
-    const newData : { [_: string]: any } = {}
-    newData[ticketThreadId] = author.id
-    updateDoc(doc(db, TICKETS_COLLECTION, AUTHORS_DOC), newData)
+export async function trackTicketH(author: GuildMember, ticketThreadId: string) {
+    const newData = stringMap([ticketThreadId], [author.id])
+    updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), newData)
 }
 
 // Check if the given member is the author of the given ticket
-export async function isTicketAuthor(caller: GuildMember, ticketThreadId: string) {
-    const docRef = doc(db, TICKETS_COLLECTION, AUTHORS_DOC)
+export async function isTicketAuthorH(caller: GuildMember, ticketThreadId: string) {
+    const docRef = doc(db, Collections.TICKETS, Documents.AUTHORS)
     const document = await getDoc(docRef)
     const authorId = document.get(ticketThreadId)
     return authorId === caller.id
 }
 
 // Delete the specified ticket from the db
-export async function removeTicket(ticketThreadId: string) {
-    const updateJson : { [_: string]: any } = {}
-    updateJson[ticketThreadId] = deleteField()
-    updateDoc(doc(db, TICKETS_COLLECTION, AUTHORS_DOC), updateJson)
+export async function removeTicketH(ticketThreadId: string) {
+    const updateJson = stringMap([ticketThreadId], [deleteField()])
+    updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), updateJson)
     return true
 }
 
-// Check whether debug mode is on
-export async function getDebug() {
-    const document = await getDoc(doc(db, CONFIG_COLLECTION, ADMIN_DOC))
-    return document.get(DEBUG_FIELD)
-}
-
-// Toggles debug mode
-export async function toggleDebug() {
-    const currentDebug = await getDebug() as boolean
-    const newData : { [_: string]: any } = {}
-    newData[DEBUG_FIELD] = !currentDebug
-    updateDoc(doc(db, CONFIG_COLLECTION, ADMIN_DOC), newData)
-    return !currentDebug
-}
+// Same as functions above, but with error handling
+export const getConfigsFromFirestore = () => withHandling({ getConfigsFromFirestoreH }) // Load config in db
+export const getDebug = () => withHandling({ getDebugH }) // Whether debug mode is on
+export const setDebug = (newValue: boolean) => withHandling({ setDebugH }, newValue) // Toggle debug mode
+export const getDebugData = () => withHandling({ getDebugDataH }) // Load debug data
+export const getTicketOverrides = () => withHandling({ getTicketOverridesH }) // Load ticket overrides (when tickets go to different channels)
+export const getKeywordSubstitutions = () => withHandling({ getKeywordSubstitutionsH }) // Load map of substitutions (when looking in message content)
+export const getKeywordEmojiLists = () => withHandling({ getKeywordEmojiListsH }) // Load map of keyword to emoji lists
+export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // Retrieve all player statuses
+export const setPlayerStatus = (name: string, status: string, token: string) => withHandling({ setPlayerStatusH }, name, status, token) // Update the status of a single player
+export const registerPlayer = (name: string) => withHandling({ registerPlayerH }, name) // Register a user with a token (if they don't already exist)
+export const unregisterPlayer = (name: string) => withHandling({ unregisterPlayerH }, name) // Unregister a user, removing their token and status data (if they exist)
+export const trackTicket = (author: GuildMember, ticketThreadId: string) => withHandling({ unregisterPlayerH }, author, ticketThreadId) // Track the author of a newly created ticket
+export const isTicketAuthor = (author: GuildMember, ticketThreadId: string) => withHandling({ isTicketAuthorH }, author, ticketThreadId) // Check if the given member is the author of the given ticket
+export const removeTicket = (ticketThreadId: string) => withHandling({ removeTicketH }, ticketThreadId) // Delete the specified ticket from the db

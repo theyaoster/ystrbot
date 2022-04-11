@@ -1,5 +1,8 @@
 node_modules
 .env
 build
-yarn.lock
-yarn-error.log
+.firebaserc
+*.log
+.yarn/cache
+.yarn/install-state.gz
+.yarn/unplugged

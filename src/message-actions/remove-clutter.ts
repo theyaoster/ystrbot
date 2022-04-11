@@ -1,6 +1,6 @@
 import { Client, Message, TextChannel } from "discord.js"
-import { discordConfig, discordConfigBlocker } from "../config/discord-config"
-import { countdown, isBot } from "../lib/utils"
+import { discordConfig, waitForDiscordConfig } from "../config/discord-config"
+import { countdown, isBot } from "../lib/discord-utils"
 
 const COUNTDOWN = 3 // seconds
 const CHANNELS_TO_KEEP_CLEAN : string[] = []
@@ -8,7 +8,7 @@ let countdownActive = false
 
 // Wait for discord config to load
 async function waitForConfig() {
-    await discordConfigBlocker()
+    await waitForDiscordConfig()
     CHANNELS_TO_KEEP_CLEAN.push(discordConfig.FEEDBACK_CHANNEL_ID)
 }
 

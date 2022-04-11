@@ -2,19 +2,19 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
 import { genericOops } from "../lib/error-responses"
-import { commandFromTextChannel } from "../lib/utils"
+import { commandFromTextChannel } from "../lib/discord-utils"
 import { getTicketOverrides, trackTicket } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
     .setDescription("Submit a feedback/suggestion request.")
     .addStringOption(option => option.setName("description").setDescription("Enter ticket content here.").setRequired(true))
- 
+
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {
         return
     }
-    
+
     const ticketOverrides = await getTicketOverrides()
     const channelId = interaction.user.id in ticketOverrides ? ticketOverrides[interaction.user.id] : discordConfig.FEEDBACK_CHANNEL_ID
     const feedbackChannel = client.channels.cache.get(channelId)
@@ -34,10 +34,10 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         await thread.setLocked(true) // So only mods can unarchive
 
         trackTicket(interaction.member as GuildMember, thread.id)
-    
+
         const problemDescription = interaction.options.getString("description")!
         thread.send(`Submission details:\n**User**: ${interaction.user.username}\n**Description**: ${problemDescription}`)
-    
+
         interaction.reply({
             content: `Ticket received, thanks. See ${feedbackChannel} for your ticket thread.`,
             ephemeral: true

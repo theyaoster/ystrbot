@@ -1,6 +1,7 @@
 import { Client, Message } from "discord.js"
 import _ from "underscore"
-import { isBot, withoutEmojis } from "../lib/utils"
+import { withoutEmojis } from "../lib/data-structure-utils"
+import { isBot } from "../lib/discord-utils"
 import { getKeywordSubstitutions, getKeywordEmojiLists } from "../lib/firestore"
 
 export async function execute(message: Message, __: Client) {

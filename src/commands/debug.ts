@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js";
 import { unauthorizedOops } from "../lib/error-responses";
-import { toggleDebug } from "../lib/firestore";
-import { commandFromTextChannel, handleDebug, isAdmin } from "../lib/utils";
+import { getDebug, setDebug } from "../lib/firestore";
+import { commandFromTextChannel, handleDebug, isAdmin } from "../lib/discord-utils";
 
 export const data = new SlashCommandBuilder()
     .setName("debug")
@@ -19,12 +19,12 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         return unauthorizedOops(interaction)
     }
 
-    const newDebug = await toggleDebug()
+    const newDebug = !(await getDebug())
+    await setDebug(newDebug)
     await handleDebug(newDebug)
 
     const state = newDebug ? "on" : "off"
-    interaction.reply({
-        content: `Debug mode is now **${state}**.`,
-        ephemeral: true
-    })
+    const message = `Debug mode is now **${state}**.`
+    interaction.reply({ content: message, ephemeral: true })
+    console.log(message)
 }

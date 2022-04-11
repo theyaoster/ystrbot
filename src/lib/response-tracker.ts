@@ -1,7 +1,7 @@
 import { GuildMember, Message, TextChannel } from "discord.js"
 import _ from "underscore"
+import { numToEmoji, readableArray } from "./data-structure-utils"
 import { getLatestPing } from "./ping-tracker"
-import { numToEmoji, readableArray } from "./utils"
 
 // Mapping from ping message to set of yes responders
 let yesResponders = new Array<GuildMember>()
@@ -32,7 +32,7 @@ export async function trackYes(pingMessage: Message, member: GuildMember, channe
     }
 
     const responderString = readableArray(yesResponders.map(member => member.nickname || member.user.username))
-    const newText = `${responderString} ${yesResponders.length === 1 ? "is" : "are"} down!`
+    const newText = `${responderString} ${yesResponders.length === 1 ? "is" : "are"} down`
     if (yesResponse) {
         if (_.isEmpty(yesResponders)) {
             // If there are now zero people down...

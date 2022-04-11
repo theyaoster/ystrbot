@@ -2,9 +2,10 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, TextChannel, GuildMember, Role, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
-import { sleep, commandFromTextChannel, findEmoji } from "../lib/utils"
+import { commandFromTextChannel, findEmoji } from "../lib/discord-utils"
 import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/ping-tracker"
 import { findBestMatch } from "string-similarity"
+import { sleep } from "../lib/data-structure-utils"
 
 const MIN_DELAY = 1 // 1 minute
 const MAX_DELAY = 24 * 60 // 1 day max
@@ -128,7 +129,7 @@ async function handleNotificationCountdown(username: string, pingChannel: TextCh
 
     let buildNotif = (s1: string, s2: string, s3: string, s4: string) => `${s1}${s2} wants to play ${s3}${s4}`
     let sentNotif = undefined
-    for (let count of _.range(delayMin, 0, -1)) {
+    for (const count of _.range(delayMin, 0, -1)) {
         // Only display countdown if a delay is provided
         const plurality = count === 1 ? "**. :eyes:" : "s**. :eyes:"
         const notifString = buildNotif(username, alsoString, `${modeString}in **${count} minute`, plurality)

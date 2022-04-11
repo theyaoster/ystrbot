@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel, findEmoji } from "../lib/utils"
+import { commandFromTextChannel, findEmoji } from "../lib/discord-utils"
 import { getPlayerStatuses } from "../lib/firestore"
 import _ from "underscore"
 
@@ -25,7 +25,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
                 displayedContent += `${name} ${"-".repeat(maxLength + PADDING_CHARACTERS - name.length)}> ${statuses[name]}\n`
             })
             displayedContent += "```"
-    
+
             interaction.reply(displayedContent)
         }
     }).catch(console.error)

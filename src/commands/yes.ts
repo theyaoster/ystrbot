@@ -3,7 +3,7 @@ import { Client, CommandInteraction, GuildMember, Message, TextChannel } from "d
 import { discordConfig } from "../config/discord-config"
 import { getLatestPing } from "../lib/ping-tracker"
 import { trackYes } from "../lib/response-tracker"
-import { commandFromTextChannel } from "../lib/utils"
+import { commandFromTextChannel } from "../lib/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("yes")

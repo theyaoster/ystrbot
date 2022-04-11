@@ -1,8 +1,9 @@
 import { Message, GuildMember, TextChannel } from "discord.js"
 import { Queue } from "queue-typescript"
 import _ from "underscore"
+import { sleep } from "./data-structure-utils"
 import { resetPingResponses } from "./response-tracker"
-import { sleep, findEmoji } from "./utils"
+import { findEmoji } from "./discord-utils"
 
 // Track active /val pings per user
 const activePings = new Map<GuildMember, Set<Promise<void>>>()
@@ -99,7 +100,7 @@ export async function tempPingBan(member: GuildMember, channel: TextChannel) {
     for (const hourCount of _.range(FIRED_PING_RATE_LIMIT_WINDOW, 0, -1)) {
         const messageContent = `take a break ${member}... no more pinging for the next ${hourCount} hours ${findEmoji("angery", member.guild.client)}`
         if (_.isUndefined(sentMessage)) {
-            sentMessage = await channel.send(messageContent) 
+            sentMessage = await channel.send(messageContent)
         } else {
             sentMessage.edit(messageContent)
         }

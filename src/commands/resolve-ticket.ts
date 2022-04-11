@@ -2,14 +2,14 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, ThreadChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
 import { getTicketOverrides, isTicketAuthor, removeTicket } from "../lib/firestore"
-import { commandFromTextChannelThread, isAdmin } from "../lib/utils"
+import { commandFromTextChannelThread, isAdmin } from "../lib/discord-utils"
 import { unauthorizedOops } from "../lib/error-responses"
 
 export const data = new SlashCommandBuilder()
     .setName("resolve_ticket")
     .setDescription("(Admin) Resolve a ticket.")
     .addBooleanOption(option => option.setName("accepted").setDescription("Whether the ticket was accepted.").setRequired(true))
- 
+
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannelThread(interaction, client)) {
         return
@@ -34,7 +34,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
             })
         }
     }
-    
+
     const accepted = interaction.options.getBoolean("accepted")
     if (accepted) {
         await interaction.reply("Feedback accepted and resolved. :white_check_mark:")

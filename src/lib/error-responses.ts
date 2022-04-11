@@ -1,5 +1,5 @@
 import { CommandInteraction, TextChannel } from "discord.js"
-import { findEmoji } from "./utils"
+import { findEmoji } from "./discord-utils"
 
 export function useTextChannelOops(interaction: CommandInteraction) {
     return interaction.reply({

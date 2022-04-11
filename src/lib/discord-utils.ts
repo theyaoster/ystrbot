@@ -3,16 +3,9 @@ import _ from "underscore";
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses";
 import { discordConfig } from "../config/discord-config";
 import { getConfigsFromFirestore, getDebugData } from "./firestore";
-import converter from "number-to-words"
-const toEmoji = require("emoji-name-map") // doesn't have @types
+import { sleep } from "./data-structure-utils";
 
-const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
 const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
-
-// Idle wait
-export async function sleep(milliseconds: number) {
-    await new Promise(f => setTimeout(f, milliseconds));
-}
 
 // Whether the command came from a text channel or not
 export function commandFromTextChannel(interaction: CommandInteraction, client: Client) {
@@ -74,11 +67,6 @@ export function isBot(member: GuildMember | null) {
     return member.roles.cache.has(discordConfig.BOTS_ROLE_ID)
 }
 
-// Filters custom emojis out of a string
-export function withoutEmojis(message: string) {
-   return message.replaceAll(CAPTURE_EMOJIS_REGEX, "")
-}
-
 // Gets an emoji object by name
 export function findEmoji(alias: string, client: Client) {
     return client.emojis.cache.find(e => e.name === alias)
@@ -95,33 +83,4 @@ export async function handleDebug(newValue: boolean) {
         const configData = await getConfigsFromFirestore()
         discordConfig[VAL_ROLE_ID_NAME] = configData[VAL_ROLE_ID_NAME]
     }
-}
-
-// The current time with just hours and minutes
-export async function currentTime(addMinutes?: number) {
-    const options: { [key: string] : string } = {
-        timeZone: "PDT",
-        timeZoneName: "short",
-        hour: "numeric",
-        minute: "numeric"
-    }
-
-    const minutes = addMinutes || 0
-    return new Date(Date.now().valueOf() + minutes * 60 * 1000).toLocaleString("en-US", options)
-}
-
-// Convert number into the appropriate unicode emoji(s)
-export function numToEmoji(number: number): string[] {
-    if (number < 0) {
-        throw new Error("Input out of range: must be nonnegative.")
-    } else if (number <= 10) {
-        return [toEmoji.get(converter.toWords(number))]
-    } else {
-        return [toEmoji.get("arrow_forward"), toEmoji.get(converter.toWords(10))]
-    }
-}
-
-// Convert an array of strings into a comma separated list, with "and" inserted as needed
-export function readableArray(array: string[]) {
-    return array.reduce((a, b, i, array) => a + (i < array.length - 1 ? ', ' : ' and ') + b)
 }
