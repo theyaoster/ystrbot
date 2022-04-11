@@ -161,6 +161,6 @@ export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // R
 export const setPlayerStatus = (name: string, status: string, token: string) => withHandling({ setPlayerStatusH }, name, status, token) // Update the status of a single player
 export const registerPlayer = (name: string) => withHandling({ registerPlayerH }, name) // Register a user with a token (if they don't already exist)
 export const unregisterPlayer = (name: string) => withHandling({ unregisterPlayerH }, name) // Unregister a user, removing their token and status data (if they exist)
-export const trackTicket = (author: GuildMember, ticketThreadId: string) => withHandling({ unregisterPlayerH }, author, ticketThreadId) // Track the author of a newly created ticket
+export const trackTicket = (author: GuildMember, ticketThreadId: string) => withHandling({ trackTicketH }, author, ticketThreadId) // Track the author of a newly created ticket
 export const isTicketAuthor = (author: GuildMember, ticketThreadId: string) => withHandling({ isTicketAuthorH }, author, ticketThreadId) // Check if the given member is the author of the given ticket
 export const removeTicket = (ticketThreadId: string) => withHandling({ removeTicketH }, ticketThreadId) // Delete the specified ticket from the db
