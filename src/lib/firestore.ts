@@ -2,16 +2,19 @@ import { doc, getDoc, getFirestore, Firestore, updateDoc, deleteField } from "fi
 import { initializeApp } from "firebase/app"
 import { createHash } from "crypto"
 import { GuildMember } from "discord.js"
+import _ from "underscore"
 const xkcd = require("xkcd-password")
 
 import config from "../config/config"
 import { stringMap } from "./data-structure-utils"
 import { Collections, Documents, Fields } from "./firestore-schema"
+import { getAuth, signInWithEmailAndPassword } from "@firebase/auth"
 
 const PASSWORD_GENERATOR = new xkcd()
 
 const DEFAULT_ROOT_KEY = "data"
 const OFFLINE_STATUS = "Offline"
+const STATIC_PLAYER_DATA_KEYS = [Fields.DISCORD_ID]
 
 const FIREBASE_CONFIG = {
     apiKey: config.FIRESTORE_API_KEY,
@@ -24,7 +27,8 @@ const FIREBASE_CONFIG = {
 };
 
 // DB connection
-const db = getFirestore(initializeApp(FIREBASE_CONFIG))
+const app = initializeApp(FIREBASE_CONFIG)
+const db = getFirestore(app)
 
 // In-memory caches
 let firestoreConfigs : { [key: string] : string }
@@ -32,6 +36,13 @@ let debugData : { [key: string] : string }
 let ticketOverrides : { [key: string] : string }
 let substitutions : { [alternative: string] : string }
 let keywordToEmojiIDs : { [agent: string] : string[] }
+const playerStaticData : { [key: string] : any } = {}
+
+// Sign in using configured email
+export async function signIn() {
+    const signInResult = await signInWithEmailAndPassword(getAuth(), config.FIREBASE_EMAIL, config.FIREBASE_SECRET)
+    console.log(`Authenticated as ${signInResult.user.email}`)
+}
 
 // Helper for retrieving a field's value from a doc
 async function retrieveField(db: Firestore, collection: string, docId: string, field = DEFAULT_ROOT_KEY) {
@@ -63,6 +74,23 @@ const getKeywordSubstitutionsH = async () => substitutions ??= await retrieveFie
 const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS)
 
 // More helper functions that read or update data...
+
+// Retrieve all static player data
+async function getPlayerStaticDataH() {
+    if (_.isEmpty(playerStaticData)) {
+        const document = await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))
+        const data = document.data() // pojo
+        if (!data) {
+            throw new Error("Failed to retrieve player data!")
+        } else {
+            Object.keys(data).forEach(name => {
+                playerStaticData[name] = stringMap(STATIC_PLAYER_DATA_KEYS, STATIC_PLAYER_DATA_KEYS.map(key => data[name][key]))
+            })
+        }
+    }
+
+    return playerStaticData
+}
 
 // Retrieve all player statuses
 async function getPlayerStatusesH() {
@@ -101,7 +129,7 @@ async function setPlayerStatusH(name: string, status: string, token: string) {
 }
 
 // Register a user with a token (if they don't already exist)
-export async function registerPlayerH(name: string) {
+export async function registerPlayerH(name: string, id: string) {
     const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
     const document = await getDoc(docRef)
     if (document.get(name) && document.get(name)[Fields.SECRET]) {
@@ -110,7 +138,7 @@ export async function registerPlayerH(name: string) {
 
     const tokenPieces = await PASSWORD_GENERATOR.generate({ numWords: 3, minLength: 4, maxLength: 5 })
     const token = Buffer.from(tokenPieces.join("_"))
-    const playerData = stringMap([Fields.SECRET], [createHash("sha512").update(token).digest("hex")])
+    const playerData = stringMap([Fields.SECRET, Fields.DISCORD_ID], [createHash("sha512").update(token).digest("hex"), id])
     const newData = stringMap([name], [playerData])
     updateDoc(docRef, newData)
     return token
@@ -151,6 +179,7 @@ export async function removeTicketH(ticketThreadId: string) {
 
 // Same as functions above, but with error handling
 export const getConfigsFromFirestore = () => withHandling({ getConfigsFromFirestoreH }) // Load config in db
+export const getPlayerStaticData = () => withHandling({ getPlayerStaticDataH })
 export const getDebug = () => withHandling({ getDebugH }) // Whether debug mode is on
 export const setDebug = (newValue: boolean) => withHandling({ setDebugH }, newValue) // Toggle debug mode
 export const getDebugData = () => withHandling({ getDebugDataH }) // Load debug data
@@ -159,7 +188,7 @@ export const getKeywordSubstitutions = () => withHandling({ getKeywordSubstituti
 export const getKeywordEmojiLists = () => withHandling({ getKeywordEmojiListsH }) // Load map of keyword to emoji lists
 export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // Retrieve all player statuses
 export const setPlayerStatus = (name: string, status: string, token: string) => withHandling({ setPlayerStatusH }, name, status, token) // Update the status of a single player
-export const registerPlayer = (name: string) => withHandling({ registerPlayerH }, name) // Register a user with a token (if they don't already exist)
+export const registerPlayer = (name: string, id: string) => withHandling({ registerPlayerH }, name, id) // Register a user with a token (if they don't already exist)
 export const unregisterPlayer = (name: string) => withHandling({ unregisterPlayerH }, name) // Unregister a user, removing their token and status data (if they exist)
 export const trackTicket = (author: GuildMember, ticketThreadId: string) => withHandling({ trackTicketH }, author, ticketThreadId) // Track the author of a newly created ticket
 export const isTicketAuthor = (author: GuildMember, ticketThreadId: string) => withHandling({ isTicketAuthorH }, author, ticketThreadId) // Check if the given member is the author of the given ticket

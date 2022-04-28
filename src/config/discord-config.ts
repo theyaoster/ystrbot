@@ -1,4 +1,4 @@
-import { getConfigsFromFirestore, getDebug } from "../lib/firestore"
+import { getConfigsFromFirestore, getDebug, signIn } from "../lib/firestore"
 import { handleDebug } from "../lib/discord-utils"
 import { sleep } from "../lib/data-structure-utils"
 
@@ -13,13 +13,25 @@ export async function waitForDiscordConfig() {
     }
 }
 
-export function loadDiscordConfig() {
-    getConfigsFromFirestore().then(async configData => {
-        Object.keys(configData).forEach(key => discordConfig[key] = configData[key])
-        const debugValue = await getDebug()
-        if (debugValue === true) {
-            console.log("Starting in debug mode...")
-            handleDebug(debugValue)
-        }
+let signedIn = false
+
+export function signInAndLoadDiscordConfig() {
+    if (signedIn) {
+        console.error("Already signed in. Skipping...")
+        return
+    }
+
+    signIn().then(() => {
+        signedIn = true
+        getConfigsFromFirestore().then(async configData => {
+            Object.keys(configData).forEach(key => discordConfig[key] = configData[key])
+            const debugValue = await getDebug()
+            if (debugValue === true) {
+                console.log("Starting in debug mode...")
+                handleDebug(debugValue)
+            }
+
+            console.log("Discord configs successfully loaded from Firestore.")
+        })
     })
 }

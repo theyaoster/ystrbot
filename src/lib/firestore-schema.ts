@@ -20,4 +20,5 @@ export enum Fields {
     DEBUG_DATA = "debug_data",
     STATUS = "status",
     SECRET = "secret",
+    DISCORD_ID = "discord_id",
 }

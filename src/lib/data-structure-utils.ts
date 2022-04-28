@@ -38,6 +38,11 @@ export function numToEmoji(number: number): string[] {
     }
 }
 
+// Just get emoji by name
+export function nameToEmoji(name: string) {
+    return toEmoji.get(name)
+}
+
 // Convert an array of strings into a comma separated list, with "and" inserted as needed
 export function readableArray(array: string[]) {
     return array.reduce((a, b, i, array) => a + (i < array.length - 1 ? ', ' : ' and ') + b)

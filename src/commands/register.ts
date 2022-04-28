@@ -3,6 +3,8 @@ import { Client, CommandInteraction } from "discord.js"
 import { commandFromTextChannel } from "../lib/discord-utils"
 import { registerPlayer } from "../lib/firestore"
 
+const YSTR_REPO = "https://github.com/theyaoster/valorant-ystr/releases/latest"
+
 export const data = new SlashCommandBuilder()
     .setName("register")
     .setDescription("Register yourself to get an API key for sharing your status.")
@@ -13,9 +15,9 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     }
 
     const name = interaction.user.username
-    registerPlayer(name).then(token => {
+    registerPlayer(name, interaction.user.id).then(token => {
         interaction.reply({
-            content: `Here are your credentials. :key: Be sure to note this down as you won't see it again:\n\nName: "${name}"\nPassword: "${token}"`,
+            content: `Here are your credentials. :key: Be sure to note this down as you won't see it again:\n\nName: "${name}"\nPassword: "${token}"\n\nDownload the client at ${YSTR_REPO} to start sharing your status among other features!`,
             ephemeral: true
         })
     }).catch(reason => {
