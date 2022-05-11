@@ -92,6 +92,34 @@ async function getPlayerStaticDataH() {
     return playerStaticData
 }
 
+// Authenticate registered player against secret
+async function authenticate(name: string, token: string) {
+    const document = await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))
+    const hash = createHash("sha512").update(token).digest("hex")
+
+    // Fail if registration does not exist or token hash doesn't match
+    if (!document.get(name) || document.get(name)[Fields.SECRET] !== hash) {
+        throw new Error(`Authentication failed! Could not update player status.`)
+    }
+
+    return document.get(name)
+}
+
+// Get a player's contract
+async function getPlayerContractH(name: string, token: string) {
+    const oldPlayerData = await authenticate(name, token)
+    return oldPlayerData[Fields.CONTRACT_AGENT] as string
+}
+
+// Set a player's contract
+async function setPlayerContractH(name: string, token: string, contract_agent: string) {
+    const oldPlayerData = await authenticate(name, token)
+    oldPlayerData[Fields.CONTRACT_AGENT] = contract_agent
+    const newData = stringMap([name], [oldPlayerData])
+
+    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
+}
+
 // Retrieve all player statuses
 async function getPlayerStatusesH() {
     const document = await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))
@@ -112,20 +140,11 @@ async function getPlayerStatusesH() {
 
 // Update the status of a single player
 async function setPlayerStatusH(name: string, status: string, token: string) {
-    const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
-    const document = await getDoc(docRef)
-    const hash = createHash("sha512").update(token).digest("hex")
+    const oldPlayerData = await authenticate(name, token)
+    oldPlayerData[Fields.STATUS] = status
+    const newData = stringMap([name], [oldPlayerData])
 
-    // Fail if registration does not exist or token hash doesn't match
-    if (!document.get(name) || document.get(name)[Fields.SECRET] !== hash) {
-        throw new Error(`Authentication failed! Could not update player status.`)
-    }
-
-    const oldData = document.get(name)
-    oldData[Fields.STATUS] = status
-    const newData = stringMap([name], [oldData])
-
-    return updateDoc(docRef, newData)
+    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
 }
 
 // Register a user with a token (if they don't already exist)
@@ -186,6 +205,8 @@ export const getDebugData = () => withHandling({ getDebugDataH }) // Load debug 
 export const getTicketOverrides = () => withHandling({ getTicketOverridesH }) // Load ticket overrides (when tickets go to different channels)
 export const getKeywordSubstitutions = () => withHandling({ getKeywordSubstitutionsH }) // Load map of substitutions (when looking in message content)
 export const getKeywordEmojiLists = () => withHandling({ getKeywordEmojiListsH }) // Load map of keyword to emoji lists
+export const getPlayerContract = (name: string, token: string) => withHandling({ getPlayerContractH }, name, token) // Get player's contract agent
+export const setPlayerContract = (name: string, token: string, contract_agent: string) => withHandling({ setPlayerContractH }, name, token, contract_agent) // Set player's contract agent
 export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // Retrieve all player statuses
 export const setPlayerStatus = (name: string, status: string, token: string) => withHandling({ setPlayerStatusH }, name, status, token) // Update the status of a single player
 export const registerPlayer = (name: string, id: string) => withHandling({ registerPlayerH }, name, id) // Register a user with a token (if they don't already exist)

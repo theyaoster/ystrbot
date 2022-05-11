@@ -1,7 +1,7 @@
 import express from "express"
 import _ from "underscore"
-import { getPlayerStaticData, setPlayerStatus } from "./lib/firestore"
-import { sleep, stringMap } from "./lib/data-structure-utils"
+import { getPlayerStaticData, setPlayerStatus, getPlayerContract } from "./lib/firestore"
+import { sleep } from "./lib/data-structure-utils"
 import { discordConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { Client, Guild, GuildMember, Role } from "discord.js"
 import config from "./config/config"
@@ -12,31 +12,44 @@ const HOST = "0.0.0.0"
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 80
 const BACKLOG = 511 // default
 const NAME_KEY = "name"
-const STATUS_KEY = "status"
-const SECRET_KEY = "secret"
-const REQUIRED_FIELDS = [NAME_KEY, STATUS_KEY, SECRET_KEY]
+
+const LIVE_STATUS_REQUIRED_FIELDS = [NAME_KEY, Fields.STATUS, Fields.SECRET]
+const CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
+
 const SLEEP_TIME = 1000 // ms
 
-const MENU_KEY = "menu"
-const RANGE_KEY = "range"
-const INGAME_KEY = "ingame"
-const AFK_KEY = "afk"
+// Status code regexes
+const DELIMITER = ";"
+const AFK_REGEX = /^AFK;.*$/
+const STARTUP_REGEX = /^STARTUP;.*$/
+const LOBBY_REGEX = /^MENUS;(DEFAULT|CUSTOM_GAME_SETUP);.*$/
+const QUEUE_REGEX = /^MENUS;MATCHMAKING;.*$/
+const PREGAME_REGEX = /^PREGAME;.*$/
+const RANGE_REGEX = /^INGAME;[a-zA-Z]*;ShootingRange$/
+const INGAME_REGEX = /^INGAME;[a-zA-Z]*;[a-zA-Z]*(?<!ShootingRange)$/
 
-const STATUS_KEYWORDS : { [key: string] : string[] } = stringMap([MENU_KEY, AFK_KEY, RANGE_KEY, INGAME_KEY], [["Menu", "Queue", "Setup", "Pre", "Loading", "Updating", "Found"], ["Away"], ["Range"], [" to "]])
-const STATUS_ROLES : { [status_key: string] : Role } = {} // This is populated later
+const STATUS_ROLE_MAP = new Map<RegExp, Role>()
 
 // Helper for assigning role based on status
-async function updateStatusRole(member: GuildMember, status: string) {
+async function updateStatusRole(member: GuildMember, status_message: string) {
+    const lastDelim = status_message.lastIndexOf(DELIMITER)
+
     let newRole : Role | undefined // Offline by default
-    const matchingStatusKey = [MENU_KEY, AFK_KEY, RANGE_KEY, INGAME_KEY].find(key => STATUS_KEYWORDS[key].some(kw => status.includes(kw)))
-    if (matchingStatusKey) {
-        // In menu, in range, or afk
-        newRole = STATUS_ROLES[matchingStatusKey]
+    if (lastDelim >= 0) {
+        const status_code = status_message.substring(0, lastDelim)
+
+        // Check which role the status code corresponds to
+        const matchingRegexKey = [...STATUS_ROLE_MAP.keys()].find((regex: RegExp) => regex.test(status_code))
+        if (!matchingRegexKey) {
+            console.error(`Couldn't find a matching role for status code ${status_code}`)
+        } else {
+            newRole = STATUS_ROLE_MAP.get(matchingRegexKey)
+        }
     }
 
-    // Reset status roles if player is offline or has changed status
+    // Reset status roles
     if (!newRole || (newRole && !member.roles.cache.has(newRole.id))) {
-        await member.roles.remove(Object.values(STATUS_ROLES))
+        await member.roles.remove([...STATUS_ROLE_MAP.values()])
     }
 
     if (newRole) {
@@ -55,9 +68,6 @@ const client = new Client({
     intents: [
         "GUILDS",
         "GUILD_MEMBERS",
-        "GUILD_INVITES",
-        "GUILD_MESSAGES",
-        "GUILD_MESSAGE_REACTIONS",
     ]
 })
 
@@ -74,10 +84,14 @@ waitForDiscordConfig().then(async () => {
 
     guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
 
-    STATUS_ROLES[MENU_KEY] = (await guild?.roles.fetch(discordConfig.IN_MENU_ROLE_ID))!
-    STATUS_ROLES[AFK_KEY] = (await guild?.roles.fetch(discordConfig.AFK_ROLE_ID))!
-    STATUS_ROLES[RANGE_KEY] = (await guild?.roles.fetch(discordConfig.IN_RANGE_ROLE_ID))!
-    STATUS_ROLES[INGAME_KEY] = (await guild?.roles.fetch(discordConfig.IN_GAME_ROLE_ID))!
+    // Populate status roles
+    STATUS_ROLE_MAP.set(AFK_REGEX, (await guild?.roles.fetch(discordConfig.AFK_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(LOBBY_REGEX, (await guild?.roles.fetch(discordConfig.IN_LOBBY_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(STARTUP_REGEX, STATUS_ROLE_MAP.get(LOBBY_REGEX)!)
+    STATUS_ROLE_MAP.set(QUEUE_REGEX, (await guild?.roles.fetch(discordConfig.IN_QUEUE_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(PREGAME_REGEX, (await guild?.roles.fetch(discordConfig.IN_PREGAME_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(RANGE_REGEX, (await guild?.roles.fetch(discordConfig.IN_RANGE_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(INGAME_REGEX, (await guild?.roles.fetch(discordConfig.IN_GAME_ROLE_ID))!)
 
     initialized = true
 })
@@ -86,7 +100,7 @@ waitForDiscordConfig().then(async () => {
 APP.use(express.json())
 
 APP.put("/live_status", async (request, response) => {
-    const missingFields = REQUIRED_FIELDS.filter(field => !request.body[field])
+    const missingFields = LIVE_STATUS_REQUIRED_FIELDS.filter(field => !request.body[field])
     if (!_.isEmpty(missingFields)) {
         response.json({ message: `Request body is missing expected fields: ${missingFields}` })
         return
@@ -97,17 +111,47 @@ APP.put("/live_status", async (request, response) => {
         await sleep(SLEEP_TIME)
     }
 
-    setPlayerStatus(request.body[NAME_KEY], request.body[STATUS_KEY], request.body[SECRET_KEY]).then(async _ => {
+    // Get the status message that will be stored in firestore
+    const full_msg = request.body[Fields.STATUS]
+    const status = full_msg.includes(DELIMITER) ? full_msg.split(DELIMITER).pop() : full_msg
+
+    // Set the player status
+    setPlayerStatus(request.body[NAME_KEY], status, request.body[Fields.SECRET]).then(async _ => {
         const playerData = await getPlayerStaticData()
         const member = await guild!.members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
         if (!member) {
-            console.error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
+            throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
         } else {
-            updateStatusRole(member, request.body[STATUS_KEY])
+            updateStatusRole(member, full_msg) // Code will be of the form status_type|party_state|provisioning_flow
+            response.json({ message: `Updated status for ${request.body[NAME_KEY]} to ${status}.` })
         }
-        response.json({ message: `Updated status for ${request.body[NAME_KEY]} to ${request.body[STATUS_KEY]}.` })
     }).catch(error => {
         console.error(`Error occurred while setting player status: ${error}`)
+    })
+})
+
+APP.get("/contract", async (request, response) => {
+    const missingFields = CONTRACT_REQUIRED_FIELDS.filter(field => !request.body[field])
+    if (!_.isEmpty(missingFields)) {
+        response.json({ message: `Request body is missing expected fields: ${missingFields}` })
+        return
+    }
+
+    // Wait for initialization to complete if needed
+    while (!initialized) {
+        await sleep(SLEEP_TIME)
+    }
+
+    getPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET]).then(async agent => {
+        const playerData = await getPlayerStaticData()
+        const member = await guild!.members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
+        if (!member) {
+            throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
+        } else {
+            response.json({ contract: agent })
+        }
+    }).catch(error => {
+        console.error(`Error occurred while getting player contract: ${error}`)
     })
 })
 
