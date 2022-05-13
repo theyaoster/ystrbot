@@ -31,13 +31,9 @@ const INGAME_REGEX = /^INGAME;[a-zA-Z]*;[a-zA-Z]*(?<!ShootingRange)$/
 const STATUS_ROLE_MAP = new Map<RegExp, Role>()
 
 // Helper for assigning role based on status
-async function updateStatusRole(member: GuildMember, status_message: string) {
-    const lastDelim = status_message.lastIndexOf(DELIMITER)
-
+async function updateStatusRole(member: GuildMember, status_code: string) {
     let newRole : Role | undefined // Offline by default
-    if (lastDelim >= 0) {
-        const status_code = status_message.substring(0, lastDelim)
-
+    if (status_code.includes(DELIMITER)) {
         // Check which role the status code corresponds to
         const matchingRegexKey = [...STATUS_ROLE_MAP.keys()].find((regex: RegExp) => regex.test(status_code))
         if (!matchingRegexKey) {
@@ -113,16 +109,18 @@ APP.put("/live_status", async (request, response) => {
 
     // Get the status message that will be stored in firestore
     const full_msg = request.body[Fields.STATUS]
-    const status = full_msg.includes(DELIMITER) ? full_msg.split(DELIMITER).pop() : full_msg
+    const indexOfDelim = full_msg.lastIndexOf(DELIMITER)
+    const status = indexOfDelim >= 0 ? full_msg.substring(indexOfDelim + 1) : full_msg
+    const status_code = indexOfDelim >= 0 ? full_msg.substring(0, indexOfDelim) : full_msg
 
     // Set the player status
-    setPlayerStatus(request.body[NAME_KEY], status, request.body[Fields.SECRET]).then(async _ => {
+    setPlayerStatus(request.body[NAME_KEY], status, status_code, request.body[Fields.SECRET]).then(async _ => {
         const playerData = await getPlayerStaticData()
         const member = await guild!.members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
         if (!member) {
             throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
         } else {
-            updateStatusRole(member, full_msg) // Code will be of the form status_type|party_state|provisioning_flow
+            updateStatusRole(member, status_code) // Code will be of the form status_type|party_state|provisioning_flow
             response.json({ message: `Updated status for ${request.body[NAME_KEY]} to ${status}.` })
         }
     }).catch(error => {

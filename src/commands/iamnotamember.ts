@@ -14,6 +14,6 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         roles.remove(roleObj).catch(console.error)
         return interaction.reply({ content: `ok, bye ${findEmoji("sadge", client)}`, ephemeral: true })
     } else {
-        return interaction.reply({ content: "no shit", ephemeral: true })
+        return interaction.reply({ content: "you are correct", ephemeral: true })
     }
 }

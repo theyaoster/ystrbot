@@ -21,6 +21,7 @@ Registration related commands:
   • Use **/register** to register yourself as a player who wants to share their in-game status.
   • Use **/unregister** to stop sharing your in-game status.
   • Use **/status** to see the in-game status of all registered players (offline players will be hidden).
+  • Use **/contract** to set your in-game contract to a specified agent.
 
 Misc:
   • Use **/help** to show this message again.

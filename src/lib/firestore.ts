@@ -33,6 +33,7 @@ const db = getFirestore(app)
 // In-memory caches
 let firestoreConfigs : { [key: string] : string }
 let debugData : { [key: string] : string }
+let endpoint : string
 let ticketOverrides : { [key: string] : string }
 let substitutions : { [alternative: string] : string }
 let keywordToEmojiIDs : { [agent: string] : string[] }
@@ -69,6 +70,8 @@ const getConfigsFromFirestoreH = async () => firestoreConfigs ??= await retrieve
 const getDebugH = async () => (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.DEBUG)
 const setDebugH = async (newValue: boolean) => updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
 const getDebugDataH = async () => debugData ??= await retrieveField(db, Collections.CONFIG, Documents.ADMIN, Fields.DEBUG_DATA)
+const getEndpointH = async () => endpoint ??= (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.ENDPOINT)
+const getPlayerContractInternalH = async (name: string) => (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)[Fields.CONTRACT_AGENT]
 const getTicketOverridesH = async () => ticketOverrides ??= await retrieveField(db, Collections.CONFIG, Documents.TICKET_OVERRIDES)
 const getKeywordSubstitutionsH = async () => substitutions ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.SUBSTITUTIONS)
 const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS)
@@ -112,8 +115,8 @@ async function getPlayerContractH(name: string, token: string) {
 }
 
 // Set a player's contract
-async function setPlayerContractH(name: string, token: string, contract_agent: string) {
-    const oldPlayerData = await authenticate(name, token)
+async function setPlayerContractH(name: string, contract_agent: string) {
+    const oldPlayerData = (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)
     oldPlayerData[Fields.CONTRACT_AGENT] = contract_agent
     const newData = stringMap([name], [oldPlayerData])
 
@@ -139,9 +142,10 @@ async function getPlayerStatusesH() {
 }
 
 // Update the status of a single player
-async function setPlayerStatusH(name: string, status: string, token: string) {
+async function setPlayerStatusH(name: string, status: string, status_code: string, token: string) {
     const oldPlayerData = await authenticate(name, token)
     oldPlayerData[Fields.STATUS] = status
+    oldPlayerData[Fields.STATUS_CODE] = status_code
     const newData = stringMap([name], [oldPlayerData])
 
     return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
@@ -202,13 +206,15 @@ export const getPlayerStaticData = () => withHandling({ getPlayerStaticDataH })
 export const getDebug = () => withHandling({ getDebugH }) // Whether debug mode is on
 export const setDebug = (newValue: boolean) => withHandling({ setDebugH }, newValue) // Toggle debug mode
 export const getDebugData = () => withHandling({ getDebugDataH }) // Load debug data
+export const getEndpoint = () => withHandling({ getEndpointH }) // Retrieve web endpoint
 export const getTicketOverrides = () => withHandling({ getTicketOverridesH }) // Load ticket overrides (when tickets go to different channels)
 export const getKeywordSubstitutions = () => withHandling({ getKeywordSubstitutionsH }) // Load map of substitutions (when looking in message content)
 export const getKeywordEmojiLists = () => withHandling({ getKeywordEmojiListsH }) // Load map of keyword to emoji lists
 export const getPlayerContract = (name: string, token: string) => withHandling({ getPlayerContractH }, name, token) // Get player's contract agent
-export const setPlayerContract = (name: string, token: string, contract_agent: string) => withHandling({ setPlayerContractH }, name, token, contract_agent) // Set player's contract agent
+export const getPlayerContractInternal = (name: string) => withHandling({ getPlayerContractInternalH }, name) // Get player's contract without auth (this is not exposed in an API)
+export const setPlayerContract = (name: string, contract_agent: string) => withHandling({ setPlayerContractH }, name, contract_agent) // Set player's contract agent
 export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // Retrieve all player statuses
-export const setPlayerStatus = (name: string, status: string, token: string) => withHandling({ setPlayerStatusH }, name, status, token) // Update the status of a single player
+export const setPlayerStatus = (name: string, status: string, status_code: string, token: string) => withHandling({ setPlayerStatusH }, name, status, status_code, token) // Update the status of a single player
 export const registerPlayer = (name: string, id: string) => withHandling({ registerPlayerH }, name, id) // Register a user with a token (if they don't already exist)
 export const unregisterPlayer = (name: string) => withHandling({ unregisterPlayerH }, name) // Unregister a user, removing their token and status data (if they exist)
 export const trackTicket = (author: GuildMember, ticketThreadId: string) => withHandling({ trackTicketH }, author, ticketThreadId) // Track the author of a newly created ticket

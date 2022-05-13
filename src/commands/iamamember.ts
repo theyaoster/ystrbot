@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction, client: Client) {
     const roles = interaction.member?.roles as GuildMemberRoleManager
     if (roles.cache.has(discordConfig.VAL_ROLE_ID)) {
-        return interaction.reply({ content: "no shit", ephemeral: true })
+        return interaction.reply({ content: "you are correct", ephemeral: true })
     } else {
         const roleObj = interaction.guild?.roles.cache.get(discordConfig.VAL_ROLE_ID)!
         roles.add(roleObj).catch(console.error)

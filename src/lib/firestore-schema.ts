@@ -18,8 +18,10 @@ export enum Documents {
 export enum Fields {
     DEBUG = "debug",
     DEBUG_DATA = "debug_data",
+    ENDPOINT = "endpoint",
     CONTRACT_AGENT = "contract_agent",
     STATUS = "status",
+    STATUS_CODE = "status_code",
     SECRET = "secret",
     DISCORD_ID = "discord_id",
 }
