@@ -1,6 +1,6 @@
 import express from "express"
 import _ from "underscore"
-import { getPlayerStaticData, setPlayerStatus, getPlayerContract } from "./lib/firestore"
+import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract } from "./lib/firestore"
 import { sleep } from "./lib/data-structure-utils"
 import { discordConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { Client, Guild, GuildMember, Role } from "discord.js"
@@ -14,7 +14,8 @@ const BACKLOG = 511 // default
 const NAME_KEY = "name"
 
 const LIVE_STATUS_REQUIRED_FIELDS = [NAME_KEY, Fields.STATUS, Fields.SECRET]
-const CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
+const GET_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
+const PUT_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.CONTRACT_AGENT]
 
 const SLEEP_TIME = 1000 // ms
 
@@ -29,35 +30,6 @@ const RANGE_REGEX = /^INGAME;[a-zA-Z]*;ShootingRange$/
 const INGAME_REGEX = /^INGAME;[a-zA-Z]*;[a-zA-Z]*(?<!ShootingRange)$/
 
 const STATUS_ROLE_MAP = new Map<RegExp, Role>()
-
-// Helper for assigning role based on status
-async function updateStatusRole(member: GuildMember, status_code: string) {
-    let newRole : Role | undefined // Offline by default
-    if (status_code.includes(DELIMITER)) {
-        // Check which role the status code corresponds to
-        const matchingRegexKey = [...STATUS_ROLE_MAP.keys()].find((regex: RegExp) => regex.test(status_code))
-        if (!matchingRegexKey) {
-            console.error(`Couldn't find a matching role for status code ${status_code}`)
-        } else {
-            newRole = STATUS_ROLE_MAP.get(matchingRegexKey)
-        }
-    }
-
-    // Reset status roles
-    if (!newRole || (newRole && !member.roles.cache.has(newRole.id))) {
-        await member.roles.remove([...STATUS_ROLE_MAP.values()])
-    }
-
-    if (newRole) {
-        if (member.roles.cache.has(newRole.id)) {
-            console.log(`Status role for ${member.user.username} is already '${newRole.name}' - skipping.`)
-        } else {
-            await member.roles.add(newRole)
-
-            console.log(`Updated status role for ${member.user.username} to '${newRole.name}'.`)
-        }
-    }
-}
 
 // Create Discord client
 const client = new Client({
@@ -96,16 +68,7 @@ waitForDiscordConfig().then(async () => {
 APP.use(express.json())
 
 APP.put("/live_status", async (request, response) => {
-    const missingFields = LIVE_STATUS_REQUIRED_FIELDS.filter(field => !request.body[field])
-    if (!_.isEmpty(missingFields)) {
-        response.json({ message: `Request body is missing expected fields: ${missingFields}` })
-        return
-    }
-
-    // Wait for initialization to complete if needed
-    while (!initialized) {
-        await sleep(SLEEP_TIME)
-    }
+    await validateRequest(request, response, LIVE_STATUS_REQUIRED_FIELDS)
 
     // Get the status message that will be stored in firestore
     const full_msg = request.body[Fields.STATUS]
@@ -121,7 +84,7 @@ APP.put("/live_status", async (request, response) => {
             throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
         } else {
             updateStatusRole(member, status_code) // Code will be of the form status_type|party_state|provisioning_flow
-            response.json({ message: `Updated status for ${request.body[NAME_KEY]} to ${status}.` })
+            response.json({ message: `Updated status for '${request.body[NAME_KEY]}' to '${status}'.` })
         }
     }).catch(error => {
         console.error(`Error occurred while setting player status: ${error}`)
@@ -129,9 +92,65 @@ APP.put("/live_status", async (request, response) => {
 })
 
 APP.get("/contract", async (request, response) => {
-    const missingFields = CONTRACT_REQUIRED_FIELDS.filter(field => !request.body[field])
+    await validateRequest(request, response, GET_CONTRACT_REQUIRED_FIELDS)
+
+    getPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET]).then(async agent => {
+        response.json({ contract_agent: agent })
+    }).catch(error => {
+        console.error(`Error occurred while getting contract for '${request.body[NAME_KEY]}': ${error}`)
+    })
+})
+
+APP.put("/contract", async (request, response) => {
+    await validateRequest(request, response, PUT_CONTRACT_REQUIRED_FIELDS)
+
+    setPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET], request.body[Fields.CONTRACT_AGENT]).then(async () => {
+        response.json({ message: `Updated contract agent for '${request.body[NAME_KEY]}' to ${request.body[Fields.CONTRACT_AGENT]}` })
+    }).catch(error => {
+        console.error(`Error occurred while updating contract for '${request.body[NAME_KEY]}': ${error}`)
+    })
+})
+
+APP.listen(PORT, HOST, BACKLOG, () => {
+    console.log(`Listening for events on ${HOST}:${PORT}...`)
+})
+
+// Helpers //
+
+// Helper for assigning role based on status
+async function updateStatusRole(member: GuildMember, statusCode: string) {
+    let newRole : Role | undefined // Offline by default
+    if (statusCode.includes(DELIMITER)) {
+        // Check which role the status code corresponds to
+        const matchingRegexKey = [...STATUS_ROLE_MAP.keys()].find((regex: RegExp) => regex.test(statusCode))
+        if (!matchingRegexKey) {
+            console.error(`Couldn't find a matching role for status code ${statusCode}`)
+        } else {
+            newRole = STATUS_ROLE_MAP.get(matchingRegexKey)
+        }
+    }
+
+    // Reset status roles
+    if (!newRole || (newRole && !member.roles.cache.has(newRole.id))) {
+        await member.roles.remove([...STATUS_ROLE_MAP.values()])
+    }
+
+    if (newRole) {
+        if (member.roles.cache.has(newRole.id)) {
+            console.log(`Status role for ${member.user.username} is already '${newRole.name}' - skipping.`)
+        } else {
+            await member.roles.add(newRole)
+
+            console.log(`Updated status role for ${member.user.username} to '${newRole.name}'.`)
+        }
+    }
+}
+
+// Helper for validating API request contents
+async function validateRequest(request: express.Request, response: express.Response, requiredFields: string[]) {
+    const missingFields = requiredFields.filter(field => _.isUndefined(request.body[field]))
     if (!_.isEmpty(missingFields)) {
-        response.json({ message: `Request body is missing expected fields: ${missingFields}` })
+        response.json({ message: `Request body is missing these required fields: ${missingFields}` })
         return
     }
 
@@ -140,19 +159,5 @@ APP.get("/contract", async (request, response) => {
         await sleep(SLEEP_TIME)
     }
 
-    getPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET]).then(async agent => {
-        const playerData = await getPlayerStaticData()
-        const member = await guild!.members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
-        if (!member) {
-            throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
-        } else {
-            response.json({ contract: agent })
-        }
-    }).catch(error => {
-        console.error(`Error occurred while getting player contract: ${error}`)
-    })
-})
-
-APP.listen(PORT, HOST, BACKLOG, () => {
-    console.log(`Listening for events on ${HOST}:${PORT}...`)
-})
+    return
+}

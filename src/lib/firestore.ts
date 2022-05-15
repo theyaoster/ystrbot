@@ -60,7 +60,7 @@ export async function withHandling(methodDict: { [methodId: string]: (...args: a
         const output = args.length > 0 ? await method(...args) : await method()
         return output
     } catch (error) {
-        console.error(`Error occured while calling ${methodName}: ${error}`)
+        console.error(`Error occurred while calling ${methodName}: ${error}`)
         throw new Error(`${error}`)
     }
 }
@@ -102,7 +102,8 @@ async function authenticate(name: string, token: string) {
 
     // Fail if registration does not exist or token hash doesn't match
     if (!document.get(name) || document.get(name)[Fields.SECRET] !== hash) {
-        throw new Error(`Authentication failed! Could not update player status.`)
+        console.error(`Bad auth attempt: ${name}, ${token}`)
+        throw new Error(`Authentication failed!`)
     }
 
     return document.get(name)
@@ -115,7 +116,16 @@ async function getPlayerContractH(name: string, token: string) {
 }
 
 // Set a player's contract
-async function setPlayerContractH(name: string, contract_agent: string) {
+async function setPlayerContractH(name: string, token: string, contract_agent: string) {
+    const oldPlayerData = await authenticate(name, token)
+    oldPlayerData[Fields.CONTRACT_AGENT] = contract_agent
+    const newData = stringMap([name], [oldPlayerData])
+
+    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
+}
+
+// Set a player's contract without auth
+async function setPlayerContractInternalH(name: string, contract_agent: string) {
     const oldPlayerData = (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)
     oldPlayerData[Fields.CONTRACT_AGENT] = contract_agent
     const newData = stringMap([name], [oldPlayerData])
@@ -216,7 +226,8 @@ export const getKeywordSubstitutions = () => withHandling({ getKeywordSubstituti
 export const getKeywordEmojiLists = () => withHandling({ getKeywordEmojiListsH }) // Load map of keyword to emoji lists
 export const getPlayerContract = (name: string, token: string) => withHandling({ getPlayerContractH }, name, token) // Get player's contract agent
 export const getPlayerContractInternal = (name: string) => withHandling({ getPlayerContractInternalH }, name) // Get player's contract without auth (this is not exposed in an API)
-export const setPlayerContract = (name: string, contract_agent: string) => withHandling({ setPlayerContractH }, name, contract_agent) // Set player's contract agent
+export const setPlayerContract = (name: string, token: string, contract_agent: string) => withHandling({ setPlayerContractH }, name, token, contract_agent) // Set player's contract agent
+export const setPlayerContractInternal = (name: string, contract_agent: string) => withHandling({ setPlayerContractInternalH }, name, contract_agent) // Set player's contract agent without auth (this is not exposed in an API)
 export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // Retrieve all player statuses
 export const setPlayerStatus = (name: string, status: string, status_code: string, token: string) => withHandling({ setPlayerStatusH }, name, status, status_code, token) // Update the status of a single player
 export const registerPlayer = (name: string, id: string) => withHandling({ registerPlayerH }, name, id) // Register a user with a token (if they don't already exist)

@@ -19,7 +19,7 @@ const loadLocalConfigResult = dotenv.config()
 
 const configVariables = process.env
 if (loadLocalConfigResult.error) {
-    console.error(`Error occured while loading .env: ${loadLocalConfigResult.error}`)
+    console.log(`No .env file found - will assume environment variables are already present.`)
 }
 
 const config: Record<string, string> = {}
