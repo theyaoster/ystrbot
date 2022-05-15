@@ -39,7 +39,7 @@
     "emoji-name-map": "^1.2.9",
     "express": "^4.18.1",
     "firebase": "^9.7.0",
-    "got": "^12.0.4",
+    "got": "11.8.3",
     "number-to-words": "^1.2.4",
     "queue-typescript": "^1.0.1",
     "string-similarity": "^4.0.4",

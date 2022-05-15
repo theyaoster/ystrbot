@@ -37,7 +37,7 @@ let endpoint : string
 let ticketOverrides : { [key: string] : string }
 let substitutions : { [alternative: string] : string }
 let keywordToEmojiIDs : { [agent: string] : string[] }
-const playerStaticData : { [key: string] : any } = {}
+const playerStaticData : { [name: string]: any } = {}
 
 // Sign in using configured email
 export async function signIn() {
@@ -163,7 +163,11 @@ export async function registerPlayerH(name: string, id: string) {
     const token = Buffer.from(tokenPieces.join("_"))
     const playerData = stringMap([Fields.SECRET, Fields.DISCORD_ID], [createHash("sha512").update(token).digest("hex"), id])
     const newData = stringMap([name], [playerData])
+
+    // Update cache and database with new player
+    playerStaticData[name] = stringMap(STATIC_PLAYER_DATA_KEYS, STATIC_PLAYER_DATA_KEYS.map(key => playerData[key]))
     updateDoc(docRef, newData)
+
     return token
 }
 

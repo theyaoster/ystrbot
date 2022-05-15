@@ -8,7 +8,7 @@ const AGENTS : string[] = []
 export async function fetchAgents() {
     if (_.isEmpty(AGENTS)) {
         const { data } = await got.get("https://valorant-api.com/v1/agents?language=en-US&isPlayableCharacter=true").json()
-        for (const agentDatum of data["data"]) {
+        for (const agentDatum of data) {
             AGENTS.push(agentDatum["displayName"].toLowerCase())
         }
     }
