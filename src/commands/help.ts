@@ -22,11 +22,14 @@ Registration related commands:
   • Use **/unregister** to stop sharing your in-game status.
   • Use **/status** to see the in-game status of all registered players (offline players will be hidden).
   • Use **/contract** to set your in-game contract to a specified agent.
+  • Use **/ign** to temporarily show your IGN (or that of another registered user).
 
 Misc:
   • Use **/help** to show this message again.
   • Use **/cap** when you feel lied to, cheated, or deceived.
-  • (Admin) Use **/debug** to toggle debug mode.`
+  • (Admin) Use **/debug** to toggle debug mode.
+
+NOTE: If you're registered and need to manually change your config or want to view debug logs, check for them in %APPDATA%\\VALORANT-ystr`
 
 export async function execute(interaction: CommandInteraction, _: Client) {
     interaction.reply({ content: helpMessage, ephemeral: true })

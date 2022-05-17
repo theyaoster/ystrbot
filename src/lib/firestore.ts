@@ -39,6 +39,8 @@ let substitutions : { [alternative: string] : string }
 let keywordToEmojiIDs : { [agent: string] : string[] }
 const playerStaticData : { [name: string]: any } = {}
 
+// Helper functions //
+
 // Sign in using configured email
 export async function signIn() {
     const signInResult = await signInWithEmailAndPassword(getAuth(), config.FIREBASE_EMAIL, config.FIREBASE_SECRET)
@@ -52,7 +54,7 @@ async function retrieveField(db: Firestore, collection: string, docId: string, f
 }
 
 // Wrapper that handles errors to avoid unhandled promise rejection errors
-export async function withHandling(methodDict: { [methodId: string]: (...args: any[]) => Promise<any> }, ...args: any[]) {
+async function withHandling(methodDict: { [methodId: string]: (...args: any[]) => Promise<any> }, ...args: any[]) {
     const methodName = Object.keys(methodDict)[0]
     const method = methodDict[methodName]
 
@@ -65,18 +67,22 @@ export async function withHandling(methodDict: { [methodId: string]: (...args: a
     }
 }
 
-// Helper functions that initialize caches of db data and fetch the data
-const getConfigsFromFirestoreH = async () => firestoreConfigs ??= await retrieveField(db, Collections.CONFIG, Documents.DISCORD_ELEMENTS)
-const getDebugH = async () => (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.DEBUG)
-const setDebugH = async (newValue: boolean) => updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
-const getDebugDataH = async () => debugData ??= await retrieveField(db, Collections.CONFIG, Documents.ADMIN, Fields.DEBUG_DATA)
-const getEndpointH = async () => endpoint ??= (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.ENDPOINT)
-const getPlayerContractInternalH = async (name: string) => (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)[Fields.CONTRACT_AGENT]
-const getTicketOverridesH = async () => ticketOverrides ??= await retrieveField(db, Collections.CONFIG, Documents.TICKET_OVERRIDES)
-const getKeywordSubstitutionsH = async () => substitutions ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.SUBSTITUTIONS)
-const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS)
+// Helper function for retrieving a single player string field
+async function getPlayerField(name: string, field: string, token?: string) {
+    const playerData = token ? await authenticate(name, token) : (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)
+    return playerData[field]
+}
 
-// More helper functions that read or update data...
+// Helper function for setting player string field(s)
+async function setPlayerFields(name: string, fieldMap: { [field: string] : string }, token?: string) {
+    const oldPlayerData = token ? await authenticate(name, token) : (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)
+    for (const key of Object.keys(fieldMap)) {
+        oldPlayerData[key] = fieldMap[key]
+    }
+    const newData = stringMap([name], [oldPlayerData])
+
+    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
+}
 
 // Retrieve all static player data
 async function getPlayerStaticDataH() {
@@ -109,29 +115,26 @@ async function authenticate(name: string, token: string) {
     return document.get(name)
 }
 
-// Get a player's contract
-async function getPlayerContractH(name: string, token: string) {
-    const oldPlayerData = await authenticate(name, token)
-    return oldPlayerData[Fields.CONTRACT_AGENT] as string
-}
+// Helper functions that initialize caches of db data and fetch the data
+const getConfigsFromFirestoreH = async () => firestoreConfigs ??= await retrieveField(db, Collections.CONFIG, Documents.DISCORD_ELEMENTS)
+const getDebugH = async () => (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.DEBUG)
+const setDebugH = async (newValue: boolean) => updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
+const getDebugDataH = async () => debugData ??= await retrieveField(db, Collections.CONFIG, Documents.ADMIN, Fields.DEBUG_DATA)
+const getEndpointH = async () => endpoint ??= (await getDoc(doc(db, Collections.CONFIG, Documents.ADMIN))).get(Fields.ENDPOINT)
 
-// Set a player's contract
-async function setPlayerContractH(name: string, token: string, contract_agent: string) {
-    const oldPlayerData = await authenticate(name, token)
-    oldPlayerData[Fields.CONTRACT_AGENT] = contract_agent
-    const newData = stringMap([name], [oldPlayerData])
+const getPlayerContractInternalH = async (name: string) => getPlayerField(name, Fields.CONTRACT_AGENT)
+const getPlayerContractH = async (name: string, token: string) => getPlayerField(name, Fields.CONTRACT_AGENT, token)
+const setPlayerContractInternalH = async (name: string, contract_agent: string) => setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]))
+const setPlayerContractH = async (name: string, token: string, contract_agent: string) => setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]), token)
+const getPlayerIgnH = async (name: string) => getPlayerField(name, Fields.IGN)
+const setPlayerGameDataH = async (name: string, token: string, ign: string) => setPlayerFields(name, stringMap([Fields.IGN], [ign]), token)
+const setPlayerStatusH = async (name: string, token: string, status: string, status_code: string) => setPlayerFields(name, stringMap([Fields.STATUS, Fields.STATUS_CODE], [status, status_code]), token)
 
-    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
-}
+const getTicketOverridesH = async () => ticketOverrides ??= await retrieveField(db, Collections.CONFIG, Documents.TICKET_OVERRIDES)
+const getKeywordSubstitutionsH = async () => substitutions ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.SUBSTITUTIONS)
+const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await retrieveField(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS)
 
-// Set a player's contract without auth
-async function setPlayerContractInternalH(name: string, contract_agent: string) {
-    const oldPlayerData = (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).get(name)
-    oldPlayerData[Fields.CONTRACT_AGENT] = contract_agent
-    const newData = stringMap([name], [oldPlayerData])
-
-    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
-}
+// Helper functions continued... //
 
 // Retrieve all player statuses
 async function getPlayerStatusesH() {
@@ -151,18 +154,8 @@ async function getPlayerStatusesH() {
     }
 }
 
-// Update the status of a single player
-async function setPlayerStatusH(name: string, status: string, status_code: string, token: string) {
-    const oldPlayerData = await authenticate(name, token)
-    oldPlayerData[Fields.STATUS] = status
-    oldPlayerData[Fields.STATUS_CODE] = status_code
-    const newData = stringMap([name], [oldPlayerData])
-
-    return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
-}
-
 // Register a user with a token (if they don't already exist)
-export async function registerPlayerH(name: string, id: string) {
+async function registerPlayerH(name: string, id: string) {
     const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
     const document = await getDoc(docRef)
     if (document.get(name) && document.get(name)[Fields.SECRET]) {
@@ -182,7 +175,7 @@ export async function registerPlayerH(name: string, id: string) {
 }
 
 // Unregister a user, removing their token and status data (if they exist)
-export async function unregisterPlayerH(name: string) {
+async function unregisterPlayerH(name: string) {
     const docRef = doc(db, Collections.GAME_DATA, Documents.PLAYERS)
     const document = await getDoc(docRef)
     if (!document.get(name)) {
@@ -194,13 +187,13 @@ export async function unregisterPlayerH(name: string) {
 }
 
 // Track the author of a newly created ticket
-export async function trackTicketH(author: GuildMember, ticketThreadId: string) {
+async function trackTicketH(author: GuildMember, ticketThreadId: string) {
     const newData = stringMap([ticketThreadId], [author.id])
     updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), newData)
 }
 
 // Check if the given member is the author of the given ticket
-export async function isTicketAuthorH(caller: GuildMember, ticketThreadId: string) {
+async function isTicketAuthorH(caller: GuildMember, ticketThreadId: string) {
     const docRef = doc(db, Collections.TICKETS, Documents.AUTHORS)
     const document = await getDoc(docRef)
     const authorId = document.get(ticketThreadId)
@@ -208,7 +201,7 @@ export async function isTicketAuthorH(caller: GuildMember, ticketThreadId: strin
 }
 
 // Delete the specified ticket from the db
-export async function removeTicketH(ticketThreadId: string) {
+async function removeTicketH(ticketThreadId: string) {
     const updateJson = stringMap([ticketThreadId], [deleteField()])
     updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), updateJson)
     return true
@@ -224,12 +217,16 @@ export const getEndpoint = () => withHandling({ getEndpointH }) // Retrieve web 
 export const getTicketOverrides = () => withHandling({ getTicketOverridesH }) // Load ticket overrides (when tickets go to different channels)
 export const getKeywordSubstitutions = () => withHandling({ getKeywordSubstitutionsH }) // Load map of substitutions (when looking in message content)
 export const getKeywordEmojiLists = () => withHandling({ getKeywordEmojiListsH }) // Load map of keyword to emoji lists
+
 export const getPlayerContract = (name: string, token: string) => withHandling({ getPlayerContractH }, name, token) // Get player's contract agent
 export const getPlayerContractInternal = (name: string) => withHandling({ getPlayerContractInternalH }, name) // Get player's contract without auth (this is not exposed in an API)
 export const setPlayerContract = (name: string, token: string, contract_agent: string) => withHandling({ setPlayerContractH }, name, token, contract_agent) // Set player's contract agent
 export const setPlayerContractInternal = (name: string, contract_agent: string) => withHandling({ setPlayerContractInternalH }, name, contract_agent) // Set player's contract agent without auth (this is not exposed in an API)
+export const getPlayerIgn = (name: string) => withHandling({ getPlayerIgnH }, name) // Get a registered player's ign
+export const setPlayerGameData = (name: string, token: string, ign: string) => withHandling({ setPlayerGameDataH }, name, token, ign) // Set player's in-game data
 export const getPlayerStatuses = () => withHandling({ getPlayerStatusesH }) // Retrieve all player statuses
-export const setPlayerStatus = (name: string, status: string, status_code: string, token: string) => withHandling({ setPlayerStatusH }, name, status, status_code, token) // Update the status of a single player
+export const setPlayerStatus = (name: string, token: string, status: string, status_code: string) => withHandling({ setPlayerStatusH }, name, token, status, status_code) // Update the status of a single player
+
 export const registerPlayer = (name: string, id: string) => withHandling({ registerPlayerH }, name, id) // Register a user with a token (if they don't already exist)
 export const unregisterPlayer = (name: string) => withHandling({ unregisterPlayerH }, name) // Unregister a user, removing their token and status data (if they exist)
 export const trackTicket = (author: GuildMember, ticketThreadId: string) => withHandling({ trackTicketH }, author, ticketThreadId) // Track the author of a newly created ticket

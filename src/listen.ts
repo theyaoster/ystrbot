@@ -1,6 +1,6 @@
 import express from "express"
 import _ from "underscore"
-import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract } from "./lib/firestore"
+import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract, setPlayerGameData } from "./lib/firestore"
 import { sleep } from "./lib/data-structure-utils"
 import { discordConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { Client, Guild, GuildMember, Role } from "discord.js"
@@ -16,6 +16,7 @@ const NAME_KEY = "name"
 const LIVE_STATUS_REQUIRED_FIELDS = [NAME_KEY, Fields.STATUS, Fields.SECRET]
 const GET_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
 const PUT_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.CONTRACT_AGENT]
+const PUT_PLAYER_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.IGN]
 
 const SLEEP_TIME = 1000 // ms
 
@@ -77,14 +78,14 @@ APP.put("/live_status", async (request, response) => {
     const status_code = indexOfDelim >= 0 ? full_msg.substring(0, indexOfDelim) : full_msg
 
     // Set the player status
-    setPlayerStatus(request.body[NAME_KEY], status, status_code, request.body[Fields.SECRET]).then(async _ => {
+    setPlayerStatus(request.body[NAME_KEY], request.body[Fields.SECRET], status, status_code).then(async _ => {
         const playerData = await getPlayerStaticData()
         const member = await guild!.members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
         if (!member) {
             throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
         } else {
             updateStatusRole(member, status_code) // Code will be of the form status_type|party_state|provisioning_flow
-            response.json({ message: `Updated status for '${request.body[NAME_KEY]}' to '${status}'.` })
+            response.json({ message: `Updated status for ${request.body[NAME_KEY]} to '${status}'.` })
         }
     }).catch(error => {
         console.error(`Error occurred while setting player status: ${error}`)
@@ -105,9 +106,19 @@ APP.put("/contract", async (request, response) => {
     await validateRequest(request, response, PUT_CONTRACT_REQUIRED_FIELDS)
 
     setPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET], request.body[Fields.CONTRACT_AGENT]).then(async () => {
-        response.json({ message: `Updated contract agent for '${request.body[NAME_KEY]}' to ${request.body[Fields.CONTRACT_AGENT]}` })
+        response.json({ message: `Updated contract agent for ${request.body[NAME_KEY]} to ${request.body[Fields.CONTRACT_AGENT]}.` })
     }).catch(error => {
         console.error(`Error occurred while updating contract for '${request.body[NAME_KEY]}': ${error}`)
+    })
+})
+
+APP.put("/game_data", async (request, response) => {
+    await validateRequest(request, response, PUT_PLAYER_REQUIRED_FIELDS)
+
+    setPlayerGameData(request.body[NAME_KEY], request.body[Fields.SECRET], request.body[Fields.IGN]).then(async () => {
+        response.json({ message: `Updated in-game data for ${request.body[NAME_KEY]} to ${request.body[Fields.IGN]}.` })
+    }).catch(error => {
+        console.error(`Error occurred while updating in-game data for ${request.body[NAME_KEY]}: ${error}`)
     })
 })
 
