@@ -6,7 +6,7 @@ import { sleep } from "../lib/data-structure-utils";
 import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore";
 import { fetchAgents } from "../lib/valorant-content";
 
-const MAX_WAIT_COUNT = 15 // seconds
+const MAX_WAIT_COUNT = 15
 const WAIT_PERIOD = 5 // seconds
 
 export const data = new SlashCommandBuilder()
