@@ -22,9 +22,10 @@ export async function execute(interaction: CommandInteraction, _: Client) {
             interaction.reply({ content: "I don't see their IGN in the database. Have they launched VALORANT-ystr recently?", ephemeral: true })
         }
     }).catch(reason => {
-        console.log(reason.stack)
+        console.error(`Failed to fetch IGN: ${reason.stack}`)
+
         interaction.reply({
-            content: `The specified user is not registered - could not fetch IGN.`,
+            content: `User is not registered - could not fetch IGN.`,
             ephemeral: true
         })
     })

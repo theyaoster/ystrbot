@@ -14,6 +14,7 @@ function initializeBot() {
             "GUILD_INVITES",
             "GUILD_MESSAGES",
             "GUILD_MESSAGE_REACTIONS",
+            "GUILD_VOICE_STATES",
         ]
     })
 

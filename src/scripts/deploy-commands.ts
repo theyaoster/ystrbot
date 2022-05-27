@@ -1,5 +1,5 @@
 import { REST } from "@discordjs/rest"
-import { Routes } from "discord-api-types/v9"
+import { Routes } from "discord-api-types/v10"
 import config from "../config/config"
 import { waitForDiscordConfig, discordConfig, signInAndLoadDiscordConfig } from "../config/discord-config"
 import * as commandModules from "../commands"
@@ -11,7 +11,7 @@ waitForDiscordConfig().then(() => {
         commands.push(module.data)
     }
 
-    const rest = new REST({ version: '9' }).setToken(config.DISCORD_TOKEN)
+    const rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN)
 
     rest.put(Routes.applicationGuildCommands(discordConfig.CLIENT_ID, discordConfig.GUILD_ID), { body: commands }).then(() => {
         console.log("Registered commands successfully.")

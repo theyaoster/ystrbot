@@ -67,9 +67,36 @@ export function isBot(member: GuildMember | null) {
     return member.roles.cache.has(discordConfig.BOTS_ROLE_ID)
 }
 
+// Get ystrbot as a member
+export function self(client: Client) {
+    const guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
+    return guild.members.cache.get(discordConfig.CLIENT_ID)!
+}
+
+// Get the preferred nickname of a member if possible (otherwise get their username)
+export function name(member: GuildMember) {
+    return member.nickname ? member.nickname : member.user.username
+}
+
 // Gets an emoji object by name
 export function findEmoji(alias: string, client: Client) {
     return client.emojis.cache.find(e => e.name === alias)
+}
+
+// Get the channel that the bot sends updates to
+export async function sendBotMessage(client: Client, message: string, interaction?: CommandInteraction) {
+    const botChannel = client.channels.cache.get(discordConfig.BOT_TEXT_CHANNEL_ID) as TextChannel
+    if (interaction) {
+        if (interaction.channelId == botChannel.id) {
+            interaction.reply(message)
+            return null
+        } else {
+            interaction.reply({ content: `See ${botChannel} for output.`, ephemeral: true })
+            return botChannel.send(message)
+        }
+    } else {
+        return botChannel.send(message)
+    }
 }
 
 // Handle all things that change when debug is flipped
