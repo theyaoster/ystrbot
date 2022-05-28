@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
-import { audioTracker, idle } from "../lib/audio-tracker"
+import { audioTracker, idle, requestToString } from "../lib/audio-tracker"
 import { sendBotMessage } from "../lib/discord-utils"
 
 export const data = new SlashCommandBuilder()
@@ -12,10 +12,10 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     const current = audioTracker.current
 
     if (queue.length > 0 || !idle()) {
-        let queueContents = `**Currently playing**: ${current?.title}\n\n**In Queue:**\n`
+        let queueContents = `**Currently playing**: ${requestToString(current!)}\n\n**In Queue:**\n`
         let place = 1
         for (const request of queue.iterator()) {
-            queueContents += `${place}. ${request.title}\n`
+            queueContents += `${place}. ${requestToString(request)}\n`
             place++
         }
 

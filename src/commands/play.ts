@@ -9,11 +9,13 @@ export const data = new SlashCommandBuilder()
     .setDescription("Play some audio in your current channel (or channel specified in the channel parameter).")
     .addStringOption(option => option.setName("url").setDescription("Either direct URL of audio file or YouTube link.").setRequired(true))
     .addChannelOption(option => option.setName("channel").setDescription("The voice channel to play in.").setRequired(false))
+    .addIntegerOption(option => option.setName("duration").setDescription("How many seconds to play the audio for.").setRequired(false))
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     const member = interaction.member as GuildMember
     const url = interaction.options.getString("url")!
     const channelOption = interaction.options.getChannel("channel")
+    const duration = interaction.options.getInteger("duration")
 
     // Validate inputs
     if (!VALID_URL_REGEX.test(url)) {
@@ -26,7 +28,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
     // Enqueue this request
     const channelToJoin = channelOption ? channelOption : member.voice.channel!
-    const requestData = await createAudioRequest(member, url, channelToJoin)
+    const requestData = await createAudioRequest(member, url, channelToJoin, duration)
 
     interaction.reply({ content: `Added "${requestData.title}" to the queue. Use **/queue** to view the queue.`, ephemeral: true })
 

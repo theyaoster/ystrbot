@@ -61,3 +61,11 @@ export function stringMap(keys: string[], values: any[]) {
 
     return obj
 }
+
+// Generate a timecode hh:mm:ss from a total number of seconds
+export function timeCode(seconds: number) {
+    const hours = String(Math.floor(seconds / 3600)).padStart(2, "0")
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, "0")
+    const remainder = String(seconds % 60).padStart(2, "0")
+    return `${hours}:${minutes}:${remainder}`
+}
