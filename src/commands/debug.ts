@@ -6,7 +6,7 @@ import { commandFromTextChannel, handleDebug, isAdmin } from "../lib/discord-uti
 
 export const data = new SlashCommandBuilder()
     .setName("debug")
-    .setDescription("(Admin) Toggles debug mode.")
+    .setDescription("toggle debug mode (ADMIN)")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {

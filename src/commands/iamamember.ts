@@ -5,7 +5,7 @@ import { findEmoji } from "../lib/discord-utils";
 
 export const data = new SlashCommandBuilder()
     .setName("iamafragl0rd")
-    .setDescription("Declare yourself a fragl0rd.")
+    .setDescription("add yourself to @fragl0rds")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     const roles = interaction.member?.roles as GuildMemberRoleManager

@@ -6,7 +6,7 @@ const VALID_URL_REGEX = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a
 
 export const data = new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Play some audio in your current channel (or channel specified in the channel parameter).")
+    .setDescription("play audio from a YouTube link (or direct link to an audio file)")
     .addStringOption(option => option.setName("url").setDescription("Either direct URL of audio file or YouTube link.").setRequired(true))
     .addChannelOption(option => option.setName("channel").setDescription("The voice channel to play in.").setRequired(false))
     .addIntegerOption(option => option.setName("duration").setDescription("How many seconds to play the audio for.").setRequired(false))

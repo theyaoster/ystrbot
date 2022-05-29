@@ -4,7 +4,7 @@ import { getLatestMessage } from "../lib/message-tracker";
 
 export const data = new SlashCommandBuilder()
     .setName("cap")
-    .setDescription("stop the cap")
+    .setDescription("show you feel lied to, cheated, or deceived")
     .addUserOption(option => option.setName("capper").setDescription("the one who is capping").setRequired(false))
 
 export async function execute(interaction: CommandInteraction, _: Client) {

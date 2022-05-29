@@ -5,7 +5,7 @@ import { unregisterPlayer } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("unregister")
-    .setDescription("Unregister yourself so you no longer share your status.")
+    .setDescription("delete your registered account")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {

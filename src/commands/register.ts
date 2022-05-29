@@ -6,7 +6,7 @@ import { getLatestExeLink } from "../lib/repo-info"
 
 export const data = new SlashCommandBuilder()
     .setName("register")
-    .setDescription("Register yourself to get an API key for sharing your status.")
+    .setDescription("register an account for using ystrbot and VALORANT-ystr functionality")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {

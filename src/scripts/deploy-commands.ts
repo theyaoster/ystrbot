@@ -3,10 +3,12 @@ import { Routes } from "discord-api-types/v10"
 import config from "../config/config"
 import { waitForDiscordConfig, discordConfig, signInAndLoadDiscordConfig } from "../config/discord-config"
 import * as commandModules from "../commands"
+import * as helpCommand from "../commands/help"
 
 signInAndLoadDiscordConfig() // This also initializes the Firestore connection
 waitForDiscordConfig().then(() => {
     const commands = []
+    commands.push(helpCommand.data) // Add this separately to avoid circular dependency
     for (const module of Object.values(commandModules)) {
         commands.push(module.data)
     }

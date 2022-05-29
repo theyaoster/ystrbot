@@ -7,7 +7,7 @@ import { getTicketOverrides, trackTicket } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
-    .setDescription("Submit a feedback/suggestion request.")
+    .setDescription("submit feedback, bug reports, feature suggestions, etc")
     .addStringOption(option => option.setName("description").setDescription("Enter ticket content here.").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, client: Client) {

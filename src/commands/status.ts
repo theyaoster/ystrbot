@@ -8,7 +8,7 @@ const PADDING_CHARACTERS = 5
 
 export const data = new SlashCommandBuilder()
     .setName("status")
-    .setDescription("Get Valorant statuses of players (who have onboarded to share their status).")
+    .setDescription("see the in-game status of all registered players (offline players will be hidden)")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {

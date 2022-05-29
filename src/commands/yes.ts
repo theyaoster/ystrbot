@@ -7,7 +7,7 @@ import { commandFromTextChannel } from "../lib/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("yes")
-    .setDescription("You're down to play.")
+    .setDescription("say you're down to play (to the most recent /val that has pinged @fragl0rds)")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {

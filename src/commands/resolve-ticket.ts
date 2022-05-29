@@ -7,7 +7,7 @@ import { unauthorizedOops } from "../lib/error-responses"
 
 export const data = new SlashCommandBuilder()
     .setName("resolve_ticket")
-    .setDescription("(Admin) Resolve a ticket.")
+    .setDescription("resolve a ticket you created (ADMIN)")
     .addBooleanOption(option => option.setName("accepted").setDescription("Whether the ticket was accepted.").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, client: Client) {

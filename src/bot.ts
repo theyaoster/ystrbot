@@ -1,11 +1,13 @@
 import { Client } from "discord.js"
 import config from "./config/config"
 import * as commandModules from "./commands"
+import * as helpCommand from "./commands/help"
 import * as messageActionModules from "./message-actions"
 import { waitForDiscordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
 
 function initializeBot() {
     const commands = Object(commandModules)
+    commands[helpCommand.data.name] = helpCommand
 
     const client = new Client({
         intents: [

@@ -5,7 +5,7 @@ import { sendBotMessage } from "../lib/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("queue")
-    .setDescription("Display the audio queue.")
+    .setDescription("view the queue of audio requests")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     const queue = audioTracker.queue

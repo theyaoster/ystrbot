@@ -5,7 +5,7 @@ import { findEmoji } from "../lib/discord-utils";
 
 export const data = new SlashCommandBuilder()
     .setName("iamnotafragl0rd")
-    .setDescription("Revoke your fragl0rdness at your own peril.")
+    .setDescription("remove yourself from @fragl0rds")
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     const roles = interaction.member?.roles as GuildMemberRoleManager

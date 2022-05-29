@@ -11,7 +11,7 @@ const WAIT_PERIOD = 5 // seconds
 
 export const data = new SlashCommandBuilder()
     .setName("contract")
-    .setDescription("Set your in-game contract")
+    .setDescription("set your in-game contract to a specified agent")
     .addStringOption(option => option.setName("agent").setDescription("The name of the agent (e.g. Astra, Breach) whose contract you want to activate.").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, __: Client) {

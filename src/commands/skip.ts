@@ -5,7 +5,7 @@ import { isAdmin } from "../lib/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("skip")
-    .setDescription("Skip what's currently playing.")
+    .setDescription("vote to skip what's currently playing (votes are not needed if you requested it)")
 
 export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.member as GuildMember

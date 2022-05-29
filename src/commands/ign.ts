@@ -5,7 +5,7 @@ import { getPlayerIgn } from "../lib/firestore";
 
 export const data = new SlashCommandBuilder()
     .setName("ign")
-    .setDescription("Show your IGN or another registered user's IGN.")
+    .setDescription("show your IGN (or that of another registered user) for 60s")
     .addUserOption(option => option.setName("player").setDescription("A registered user.").setRequired(false))
 
 export async function execute(interaction: CommandInteraction, _: Client) {

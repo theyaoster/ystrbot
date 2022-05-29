@@ -15,7 +15,7 @@ const MODES = [ "unrated", "competitive", "custom", "spike rush", "escalation", 
 
 export const data = new SlashCommandBuilder()
     .setName("val")
-    .setDescription("Ping fragl0rds.")
+    .setDescription("ping everyone in the @fragl0rds role (from any text channel)")
     .addIntegerOption(option => option.setName("delay_in_min").setDescription("Time in minutes before ping is sent.").setRequired(false))
     .addIntegerOption(option => option.setName("ttl_in_min").setDescription("How long this ping will be up for before being marked as expired.").setRequired(false))
     .addStringOption(option => option.setName("mode").setDescription("The mode you want to play (unrated, comp, custom, etc.).").setRequired(false))
