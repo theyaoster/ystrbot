@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
-import { audioTracker, generateBotPlayingMessage, idle, skip, voteSkip } from "../lib/audio-tracker"
-import { isAdmin } from "../lib/discord-utils"
+import { audioTracker, generateBotPlayingMessage, idle, skip, voteSkip } from "../lib/trackers/audio-tracker"
+import { isAdmin } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("skip")

@@ -1,9 +1,9 @@
 import { Message, GuildMember, TextChannel } from "discord.js"
 import { Queue } from "queue-typescript"
 import _ from "underscore"
-import { sleep } from "./data-structure-utils"
+import { sleep } from "../util/data-structure-utils"
 import { resetPingResponses } from "./response-tracker"
-import { findEmoji } from "./discord-utils"
+import { findEmoji } from "../util/discord-utils"
 
 // Track active /val pings per user
 const activePings = new Map<GuildMember, Set<Promise<void>>>()

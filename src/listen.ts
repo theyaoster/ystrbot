@@ -1,11 +1,11 @@
 import express from "express"
 import _ from "underscore"
 import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract, setPlayerGameData } from "./lib/firestore"
-import { sleep } from "./lib/data-structure-utils"
+import { sleep } from "./lib/util/data-structure-utils"
 import { discordConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { Client, Guild, GuildMember, Role } from "discord.js"
 import config from "./config/config"
-import { Fields } from "./lib/firestore-schema"
+import { Fields } from "./config/firestore-schema"
 
 const APP = express()
 const HOST = "0.0.0.0"

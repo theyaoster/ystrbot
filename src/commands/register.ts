@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel } from "../lib/discord-utils"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 import { getEndpoint, registerPlayer } from "../lib/firestore"
 import { getLatestExeLink } from "../lib/repo-info"
 

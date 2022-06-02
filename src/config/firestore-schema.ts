@@ -3,6 +3,7 @@ export enum Collections {
     KEYWORD_TO_EMOJI = "keyword_to_emoji_ids",
     GAME_DATA = "game_data",
     TICKETS = "tickets",
+    MEMBERS = "members",
 }
 
 export enum Documents {
@@ -13,6 +14,7 @@ export enum Documents {
     EMOJI_IDS = "emoji_ids",
     PLAYERS = "players",
     AUTHORS = "authors",
+    COMMAND_BANS = "command_bans",
 }
 
 export enum Fields {

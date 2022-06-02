@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel } from "../lib/discord-utils"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 import { unregisterPlayer } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()

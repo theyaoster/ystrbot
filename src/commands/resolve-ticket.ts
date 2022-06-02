@@ -2,8 +2,8 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, ThreadChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
 import { getTicketOverrides, isTicketAuthor, removeTicket } from "../lib/firestore"
-import { commandFromTextChannelThread, isAdmin } from "../lib/discord-utils"
-import { unauthorizedOops } from "../lib/error-responses"
+import { commandFromTextChannelThread, isAdmin } from "../lib/util/discord-utils"
+import { unauthorizedOops } from "../lib/util/error-responses"
 
 export const data = new SlashCommandBuilder()
     .setName("resolve_ticket")
@@ -35,7 +35,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         }
     }
 
-    const accepted = interaction.options.getBoolean("accepted")
+    const accepted = interaction.options.getBoolean("accepted", true)
     if (accepted) {
         await interaction.reply("Feedback accepted and resolved. :white_check_mark:")
     } else {

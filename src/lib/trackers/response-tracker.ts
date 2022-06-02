@@ -1,6 +1,6 @@
 import { GuildMember, Message, TextChannel } from "discord.js"
 import _ from "underscore"
-import { numToEmoji, readableArray } from "./data-structure-utils"
+import { numToEmoji, readableArray } from "../util/data-structure-utils"
 import { getLatestPing } from "./ping-tracker"
 
 // Mapping from ping message to set of yes responders

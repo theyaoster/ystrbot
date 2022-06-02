@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel, findEmoji } from "../lib/discord-utils"
+import { commandFromTextChannel, findEmoji } from "../lib/util/discord-utils"
 import { getPlayerStatuses } from "../lib/firestore"
 import _ from "underscore"
 

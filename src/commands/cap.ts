@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember, TextChannel } from "discord.js";
-import { getLatestMessage } from "../lib/message-tracker";
+import { getLatestMessage } from "../lib/trackers/message-tracker";
 
 export const data = new SlashCommandBuilder()
     .setName("cap")

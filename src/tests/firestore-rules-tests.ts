@@ -3,8 +3,8 @@ import { doc, getDoc, setDoc, updateDoc, deleteDoc, setLogLevel } from "firebase
 import { readFileSync } from "fs"
 
 import config from "../config/config"
-import { Collections, Documents, Fields } from "../lib/firestore-schema"
-import { stringMap } from "../lib/data-structure-utils"
+import { Collections, Documents, Fields } from "../config/firestore-schema"
+import { stringMap } from "../lib/util/data-structure-utils"
 
 // Workaround to avoid warnings in test output...
 setLogLevel("error")

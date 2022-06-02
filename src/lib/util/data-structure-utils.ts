@@ -1,5 +1,6 @@
 
 import converter from "number-to-words"
+import * as commandModules from "../../commands/index"
 const toEmoji = require("emoji-name-map")
 
 const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
@@ -68,4 +69,9 @@ export function timeCode(seconds: number) {
     const minutes = String(Math.floor(seconds / 60)).padStart(2, "0")
     const remainder = String(seconds % 60).padStart(2, "0")
     return `${hours}:${minutes}:${remainder}`
+}
+
+// Whether a string corresponds to a command defined in src/commands
+export function isCommand(commandName: string) {
+    return commandName in Object(commandModules)
 }

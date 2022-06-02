@@ -1,10 +1,10 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client } from "discord.js";
-import { findBestMatch } from "string-similarity";
-import _ from "underscore";
-import { sleep } from "../lib/data-structure-utils";
-import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore";
-import { fetchAgents } from "../lib/valorant-content";
+import { CommandInteraction, Client } from "discord.js"
+import { findBestMatch } from "string-similarity"
+import _ from "underscore"
+import { sleep } from "../lib/util/data-structure-utils"
+import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore"
+import { fetchAgents } from "../lib/valorant-content"
 
 const MAX_WAIT_COUNT = 15
 const WAIT_PERIOD = 5 // seconds
@@ -17,7 +17,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction, __: Client) {
     const name = interaction.user.username
     const allAgents = await fetchAgents()
-    const agentInput = interaction.options.getString("agent")!
+    const agentInput = interaction.options.getString("agent", true)
     const selectedAgent = findBestMatch(agentInput.toLowerCase(), allAgents).bestMatch.target
     const currentAgent = await getPlayerContractInternal(name) // Could be undefined
 

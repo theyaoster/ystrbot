@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client } from "discord.js";
-import _ from "underscore";
+import { CommandInteraction, Client } from "discord.js"
+import _ from "underscore"
 import * as commands from "./index"
 
 export const data = new SlashCommandBuilder()

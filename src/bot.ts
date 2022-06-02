@@ -4,6 +4,8 @@ import * as commandModules from "./commands"
 import * as helpCommand from "./commands/help"
 import * as messageActionModules from "./message-actions"
 import { waitForDiscordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
+import { isCommandBanned } from "./lib/firestore"
+import { unauthorizedOops } from "./lib/util/error-responses"
 
 function initializeBot() {
     const commands = Object(commandModules)
@@ -25,7 +27,11 @@ function initializeBot() {
 
     client.on("interactionCreate", async interaction => {
         if (interaction.isCommand()) {
-            commands[interaction.commandName].execute(interaction, client)
+            if (await isCommandBanned(interaction.user.username, interaction.commandName)) {
+                unauthorizedOops(interaction)
+            } else {
+                commands[interaction.commandName].execute(interaction, client)
+            }
         }
     })
 

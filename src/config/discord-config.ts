@@ -1,6 +1,6 @@
 import { getConfigsFromFirestore, getDebug, signIn } from "../lib/firestore"
-import { handleDebug } from "../lib/discord-utils"
-import { sleep } from "../lib/data-structure-utils"
+import { handleDebug } from "../lib/util/discord-utils"
+import { sleep } from "../lib/util/data-structure-utils"
 
 const BUFFER = 3000 // ms
 

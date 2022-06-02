@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
-import { audioTracker, idle, requestToString } from "../lib/audio-tracker"
-import { sendBotMessage } from "../lib/discord-utils"
+import { audioTracker, idle, requestToString } from "../lib/trackers/audio-tracker"
+import { sendBotMessage } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("queue")

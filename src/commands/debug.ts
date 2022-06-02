@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js";
-import { unauthorizedOops } from "../lib/error-responses";
-import { getDebug, setDebug } from "../lib/firestore";
-import { commandFromTextChannel, handleDebug, isAdmin } from "../lib/discord-utils";
+import { CommandInteraction, Client, GuildMember } from "discord.js"
+import { unauthorizedOops } from "../lib/util/error-responses"
+import { getDebug, setDebug } from "../lib/firestore"
+import { commandFromTextChannel, handleDebug, isAdmin } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("debug")

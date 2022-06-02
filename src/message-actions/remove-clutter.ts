@@ -1,6 +1,6 @@
 import { Client, Message, TextChannel } from "discord.js"
 import { discordConfig, waitForDiscordConfig } from "../config/discord-config"
-import { countdown, isBot } from "../lib/discord-utils"
+import { countdown, isBot } from "../lib/util/discord-utils"
 
 const COUNTDOWN = 3 // seconds
 const CHANNELS_TO_KEEP_CLEAN : string[] = []

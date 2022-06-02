@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
-import { createAudioRequest, idle, processAudioQueue } from "../lib/audio-tracker"
+import { createAudioRequest, idle, processAudioQueue } from "../lib/trackers/audio-tracker"
 
 const VALID_URL_REGEX = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/
 
@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     const member = interaction.member as GuildMember
-    const url = interaction.options.getString("url")!
+    const url = interaction.options.getString("url", true)
     const channelOption = interaction.options.getChannel("channel")
     const duration = interaction.options.getInteger("duration")
 

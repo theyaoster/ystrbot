@@ -1,14 +1,14 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
-import { genericOops } from "../lib/error-responses"
-import { commandFromTextChannel } from "../lib/discord-utils"
+import { genericOops } from "../lib/util/error-responses"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 import { getTicketOverrides, trackTicket } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
     .setDescription("submit feedback, bug reports, feature suggestions, etc")
-    .addStringOption(option => option.setName("description").setDescription("Enter ticket content here.").setRequired(true))
+    .addStringOption(option => option.setName("description").setDescription("enter ticket content here").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction, client)) {
@@ -35,7 +35,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
         trackTicket(interaction.member as GuildMember, thread.id)
 
-        const problemDescription = interaction.options.getString("description")!
+        const problemDescription = interaction.options.getString("description", true)
         thread.send(`Submission details:\n**User**: ${interaction.user.username}\n**Description**: ${problemDescription}`)
 
         interaction.reply({

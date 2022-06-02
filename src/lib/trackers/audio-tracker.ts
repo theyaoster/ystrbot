@@ -5,8 +5,8 @@ import _ from "underscore"
 import got from "got"
 import ytdl from "ytdl-core"
 import { FFmpeg } from "prism-media"
-import { sendBotMessage } from "./discord-utils"
-import { timeCode } from "./data-structure-utils"
+import { sendBotMessage } from "../util/discord-utils"
+import { timeCode } from "../util/data-structure-utils"
 
 const VOTE_FRACTION_NEEDED = 0.5
 const MAX_DURATION = 24 * 3600 * 1000 // ms
@@ -188,7 +188,7 @@ function getOggResource(url: string, yt: boolean, start: number) {
     }
 
     // Construct ffmpeg args
-    const args = Object.assign([], FFMPEG_BASE_ARGUMENTS)
+    const args = Object.assign([], FFMPEG_BASE_ARGUMENTS) // shallow copy
     if (start > 0) {
         args.push("-ss", timeCode(start))
     }

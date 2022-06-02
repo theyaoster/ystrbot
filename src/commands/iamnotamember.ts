@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMemberRoleManager } from "discord.js";
-import { discordConfig } from "../config/discord-config";
-import { findEmoji } from "../lib/discord-utils";
+import { CommandInteraction, Client, GuildMemberRoleManager } from "discord.js"
+import { discordConfig } from "../config/discord-config"
+import { findEmoji } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("iamnotafragl0rd")

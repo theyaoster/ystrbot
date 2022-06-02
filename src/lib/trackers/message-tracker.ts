@@ -1,4 +1,4 @@
-import { GuildMember, Message, TextChannel } from "discord.js";
+import { GuildMember, Message, TextChannel } from "discord.js"
 
 const latestMessages = new Map<TextChannel, Map<GuildMember, Message>>()
 

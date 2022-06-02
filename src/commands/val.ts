@@ -2,10 +2,10 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, TextChannel, GuildMember, Role, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
-import { commandFromTextChannel, findEmoji } from "../lib/discord-utils"
-import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/ping-tracker"
+import { commandFromTextChannel, findEmoji } from "../lib/util/discord-utils"
+import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/trackers/ping-tracker"
 import { findBestMatch } from "string-similarity"
-import { sleep } from "../lib/data-structure-utils"
+import { sleep } from "../lib/util/data-structure-utils"
 
 const MIN_DELAY = 1 // 1 minute
 const MAX_DELAY = 24 * 60 // 1 day max

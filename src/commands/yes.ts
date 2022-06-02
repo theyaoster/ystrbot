@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, Message, TextChannel } from "discord.js"
 import { discordConfig } from "../config/discord-config"
-import { getLatestPing } from "../lib/ping-tracker"
-import { trackYes } from "../lib/response-tracker"
-import { commandFromTextChannel } from "../lib/discord-utils"
+import { getLatestPing } from "../lib/trackers/ping-tracker"
+import { trackYes } from "../lib/trackers/response-tracker"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("yes")
