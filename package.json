@@ -47,9 +47,14 @@
     "number-to-words": "^1.2.4",
     "queue-typescript": "^1.0.1",
     "string-similarity": "^4.0.4",
-    "underscore": "^1.13.3",
+    "underscore": "^1.13.4",
+    "tsunit.external": "^3.7.2",
     "xkcd-password": "^2.0.0",
     "ytdl-core": "^4.11.0"
+  },
+  "resolutions": {
+    "async": "^2.6.4",
+    "protobufjs": "^6.11.3"
   },
   "packageManager": "yarn@3.2.0"
 }
