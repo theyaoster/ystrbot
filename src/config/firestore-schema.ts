@@ -18,6 +18,7 @@ export enum Documents {
 }
 
 export enum Fields {
+    DATA = "data",
     DEBUG = "debug",
     DEBUG_DATA = "debug_data",
     ENDPOINT = "endpoint",
