@@ -50,8 +50,6 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
     }
 
     for (const ruoDoc of readUpdateOnlyDocs) {
-        console.log(`Testing authenticated queries on read-and-update-only doc ${ruoDoc.id}`)
-
         await assertFails(setDoc(ruoDoc, NEW_DATA_PAYLOAD, { merge: false }))
         await assertSucceeds(setDoc(ruoDoc, NEW_DATA_PAYLOAD, { merge: true }))
         await assertSucceeds(updateDoc(ruoDoc, NEW_DATA_PAYLOAD))
@@ -81,8 +79,6 @@ async function performTestsForUnauthenticatedUser(context: RulesTestContext) {
     ]
 
     for (const doc of allDocs) {
-        console.log(`Testing unauthenticated queries on doc ${doc.id}`)
-
         await assertFails(setDoc(doc, NEW_DATA_PAYLOAD))
         await assertFails(updateDoc(doc, NEW_DATA_PAYLOAD))
         await assertFails(deleteDoc(doc))

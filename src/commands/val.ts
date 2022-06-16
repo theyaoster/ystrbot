@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, TextChannel, GuildMember, Role, Message, GuildMemberRoleManager } from "discord.js"
+import { Client, CommandInteraction, TextChannel, GuildMember, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
-import { commandFromTextChannel, findEmoji } from "../lib/util/discord-utils"
+import { commandFromTextChannel, findEmoji, name } from "../lib/util/discord-utils"
 import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/trackers/ping-tracker"
 import { findBestMatch } from "string-similarity"
-import { sleep } from "../lib/util/data-structure-utils"
+import { readableTimeMinutes, readableTimeSeconds, sleepMinutes } from "../lib/util/data-structure-utils"
 
 const MIN_DELAY = 1 // 1 minute
 const MAX_DELAY = 24 * 60 // 1 day max
@@ -27,9 +27,6 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
     const member = interaction.member as GuildMember
     const pingChannel = client.channels.cache.get(discordConfig.VAL_PING_CHANNEL_ID) as TextChannel
-    if (!pingChannel) {
-        return console.error("Failed to find text channel by VAL_PING_CHANNEL_ID!")
-    }
 
     // Check for naughty behavior
     let cooldownLeft = cooldownRemaining()
@@ -37,14 +34,14 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         const whereString = interaction.channel === pingChannel ? "" : ` in ${pingChannel}`
         return interaction.reply({ content: `bitch did you not read what I said${whereString}? ${findEmoji("lmao", client)}`, ephemeral: true })
     } else if (!isNaN(cooldownLeft)) {
-        return interaction.reply({ content: `wait at least **${cooldownLeft} seconds** before pinging again ${findEmoji("sagetilt", client)} (on cooldown)`, ephemeral: true })
+        return interaction.reply({ content: `wait at least **${readableTimeSeconds(cooldownLeft)}** before pinging again ${findEmoji("sagetilt", client)} (on cooldown)`, ephemeral: true })
     } else if (exceedsActivePingLimit(member)) {
         return interaction.reply({ content: `slow your roll homie ${findEmoji("no", client)} (too many queued pings)`, ephemeral: true })
     }
 
     const guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
     const valRole = guild.roles.cache.get(discordConfig.VAL_ROLE_ID)!
-    const username = member.nickname || member.user.username
+    const username = name(member)
 
     // Validate params (if provided)
     const delayRaw = interaction.options.getInteger("delay_in_min")
@@ -61,18 +58,13 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     const mode = modeRaw ? findBestMatch(modeRaw.toLowerCase(), MODES).bestMatch.target : undefined
 
     // Reply to user
-    interaction.reply({ content: `ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${delayMinutes} minutes**`}.`, ephemeral: true })
+    interaction.reply({ content: `ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${readableTimeMinutes(delayMinutes)}**`}.`, ephemeral: true })
 
-    let notifMessage : Message | undefined = undefined
-    let originalNotifContent : string | undefined = undefined
     if (!isNaN(delayMinutes)) {
         // Notify the channel that a ping is on the way
-        const promise = handleNotificationCountdown(username, pingChannel, delayMinutes, numActivePings(member) < 1, valRole, mode)
-        trackActivePing(member, promise)
-        const result = await promise
-
-        notifMessage = result[0] as Message
-        originalNotifContent = result[1] as string
+        const delayPromise = handleNotificationCountdown(username, pingChannel, delayMinutes, numActivePings(member) < 1, mode)
+        trackActivePing(member, delayPromise)
+        await delayPromise // Wait for the countdown to complete before proceeding
     }
 
     // Temporarily remove member from the gaming role - not great, but the only
@@ -87,63 +79,56 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     // Ping gamers
     const modeString = mode ? ` (**${mode}**)` : ""
     const baseText = `${username} - ${valRole}${modeString}`
+
     pingChannel.send(baseText).then(async sentMessage => {
-        // Reuse delay notification if possible
-        if (!_.isUndefined(notifMessage)) {
-            sentMessage.delete().catch(console.error)
-        }
-
         // Determine which message is visible in channel that can be interacted with
-        const visibleMessage = _.isUndefined(notifMessage) ? sentMessage : notifMessage
-        trackFiredPing(member, sentMessage, visibleMessage)
+        trackFiredPing(member, sentMessage, sentMessage)
         if (exceedsFiredPingRateLimit(member)) {
-            tempPingBan(member, pingChannel)
+            tempPingBan(member, pingChannel) // Punish naughty spammers
         }
 
-        // If removed from the gaming role, add them back...
+        // If removed from the gaming role, add them back
         if (isGamer) {
             memberRoles.add(valRole)
         }
 
         // Handle TTL if specified
         if (!isNaN(ttlMinutes)) {
-            const originalContent = _.isUndefined(notifMessage) ? baseText : originalNotifContent
-
             // Update the expiry message every minute
             for (const count of _.range(ttlMinutes, 0, -1)) {
-                const suffix = ` (expires in **${count} minutes**)`
-                visibleMessage.edit(originalContent + suffix)
+                const suffix = ` (expires in **${readableTimeMinutes(count)}**)`
+                sentMessage.edit(baseText + suffix)
 
-                await sleep(60 * 1000) // Sleep 1 minute
+                await sleepMinutes(1) // Sleep 1 minute
             }
 
-            visibleMessage.edit(`~~${originalContent}~~ [EXPIRED]`)
+            sentMessage.edit(`~~${baseText}~~ [EXPIRED]`)
         }
     }).catch(console.error)
 }
 
 // Let the ping channel know the ping is on the way
-async function handleNotificationCountdown(username: string, pingChannel: TextChannel, delayMin: number, firstActivePing: boolean, valRole: Role, mode?: string) {
+async function handleNotificationCountdown(username: string, pingChannel: TextChannel, delayMin: number, firstActivePing: boolean, mode?: string) {
     const alsoString = firstActivePing ? "" : " *also*"
     const modeString = mode ? `**${mode}** ` : ""
 
-    let buildNotif = (s1: string, s2: string, s3: string, s4: string) => `${s1}${s2} wants to play ${s3}${s4}`
-    let sentNotif = undefined
+    let buildNotif = (s1: string, s2: string, s3: string) => `${s1}${s2} wants to play ${s3}`
+    let sentNotif : Message | undefined
     for (const count of _.range(delayMin, 0, -1)) {
         // Only display countdown if a delay is provided
-        const plurality = count === 1 ? "**. :eyes:" : "s**. :eyes:"
-        const notifString = buildNotif(username, alsoString, `${modeString}in **${count} minute`, plurality)
+        const notifString = buildNotif(username, alsoString, `${modeString}in **${readableTimeMinutes(count)}**. :eyes:`)
 
         if (!sentNotif) {
             sentNotif = await pingChannel.send(notifString)
+            sentNotif.pin() // Just in case the message gets scrolled past
         } else {
             sentNotif.edit(notifString)
         }
 
-        await sleep(60 * 1000) // Sleep 1 minute
+        await sleepMinutes(1) // Sleep 1 minute
     }
 
-    const finalText = buildNotif(username, "", `${modeString}**now`, `**. ${valRole}`)
+    const finalText = buildNotif(username, "", `${modeString}**now** (ping is below). :tada:`)
     sentNotif!.edit(finalText)
-    return [sentNotif!, finalText]
+    sentNotif!.unpin()
 }

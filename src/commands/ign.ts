@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
-import { sleep } from "../lib/util/data-structure-utils"
+import { sleepMinutes } from "../lib/util/data-structure-utils"
 import { getPlayerIgn } from "../lib/firestore"
 
 export const data = new SlashCommandBuilder()
@@ -15,7 +15,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
         if (ign) {
             interaction.reply(`${ign} (will delete in 1m)`)
 
-            await sleep(60 * 1000)
+            await sleepMinutes(1)
 
             interaction.deleteReply()
         } else {

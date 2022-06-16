@@ -1,9 +1,9 @@
-import { CommandInteraction, Client, GuildMember, TextChannel, Message } from "discord.js";
-import _ from "underscore";
-import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses";
-import { discordConfig } from "../../config/discord-config";
-import { getConfigsFromFirestore, getDebugData } from "../firestore";
-import { sleep } from "./data-structure-utils";
+import { CommandInteraction, Client, GuildMember, TextChannel, Message } from "discord.js"
+import _ from "underscore"
+import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses"
+import { discordConfig } from "../../config/discord-config"
+import { getConfigsFromFirestore, getDebugData } from "../firestore"
+import { sleep } from "./data-structure-utils"
 
 const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
 

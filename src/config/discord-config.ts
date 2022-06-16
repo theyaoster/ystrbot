@@ -1,15 +1,15 @@
 import { getConfigsFromFirestore, getDebug, signIn } from "../lib/firestore"
 import { handleDebug } from "../lib/util/discord-utils"
-import { sleep } from "../lib/util/data-structure-utils"
+import { sleepSeconds } from "../lib/util/data-structure-utils"
 
-const BUFFER = 3000 // ms
+const BUFFER = 3 // seconds
 
 export const discordConfig: Record<string, string> = {}
 
 // Export this promise so other modules can block until the config is loaded
 export async function waitForDiscordConfig() {
     while (Object.keys(discordConfig).length === 0) {
-        await sleep(BUFFER)
+        await sleepSeconds(BUFFER)
     }
 }
 

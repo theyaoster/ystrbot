@@ -1,7 +1,7 @@
 import { Message, GuildMember, TextChannel } from "discord.js"
 import { Queue } from "queue-typescript"
 import _ from "underscore"
-import { sleep } from "../util/data-structure-utils"
+import { sleepHours } from "../util/data-structure-utils"
 import { resetPingResponses } from "./response-tracker"
 import { findEmoji } from "../util/discord-utils"
 
@@ -105,7 +105,7 @@ export async function tempPingBan(member: GuildMember, channel: TextChannel) {
             sentMessage.edit(messageContent)
         }
 
-        await sleep(3600 * 1000); // Sleep for an hour
+        await sleepHours(1) // Sleep for an hour
     }
 
     sentMessage!.delete()

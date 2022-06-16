@@ -42,10 +42,14 @@ export async function signIn() {
 }
 
 // Helper for retrieving a field's value from a doc
-async function _getField(docRef: DocumentReference, field = DEFAULT_ROOT_KEY) {
+async function _getField(docRef: DocumentReference, field = DEFAULT_ROOT_KEY, defaultValue?: any) {
     const document = await getDoc(docRef)
 
     if (_.isUndefined(document.get(field))) {
+        if (defaultValue) {
+            return defaultValue
+        }
+
         throw new Error(`No such field ${docRef.path}/${field}`)
     }
 
@@ -68,7 +72,7 @@ async function _withHandling(methodDict: { [methodId: string]: (...args: any[]) 
 
 // Helper function for retrieving a single player string field
 async function _getPlayerField(name: string, field: string, token?: string) {
-    const playerData = token ? await _authenticate(name, token) : _getField(doc(db, Collections.GAME_DATA, Documents.PLAYERS), name)
+    const playerData = token ? await _authenticate(name, token) : await _getField(doc(db, Collections.GAME_DATA, Documents.PLAYERS), name)
 
     if (!(field in playerData)) {
         throw new Error(`${field} is not a field in ${name}`)
@@ -79,7 +83,7 @@ async function _getPlayerField(name: string, field: string, token?: string) {
 
 // Helper function for setting player string field(s)
 async function _setPlayerFields(name: string, fieldMap: { [field: string] : string }, token?: string) {
-    const oldPlayerData = token ? await _authenticate(name, token) : _getField(doc(db, Collections.GAME_DATA, Documents.PLAYERS), name)
+    const oldPlayerData = token ? await _authenticate(name, token) : await _getField(doc(db, Collections.GAME_DATA, Documents.PLAYERS), name)
     for (const key of Object.keys(fieldMap)) {
         if (!(key in oldPlayerData)) {
             console.log(`WARN: setting previously undefined field ${key} for ${name}.`)
@@ -161,11 +165,11 @@ const getDebugDataH = async () => await _getField(doc(db, Collections.CONFIG, Do
 const getEndpointH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.ENDPOINT)
 
 const unregisterPlayerH = async (name: string) => updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), stringMap([name], [deleteField()]))
-const getPlayerContractInternalH = async (name: string) => _getPlayerField(name, Fields.CONTRACT_AGENT)
-const getPlayerContractH = async (name: string, token: string) => _getPlayerField(name, Fields.CONTRACT_AGENT, token)
+const getPlayerContractInternalH = async (name: string) => await _getPlayerField(name, Fields.CONTRACT_AGENT)
+const getPlayerContractH = async (name: string, token: string) => await _getPlayerField(name, Fields.CONTRACT_AGENT, token)
 const setPlayerContractInternalH = async (name: string, contract_agent: string) => _setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]))
 const setPlayerContractH = async (name: string, token: string, contract_agent: string) => _setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]), token)
-const getPlayerIgnH = async (name: string) => _getPlayerField(name, Fields.IGN)
+const getPlayerIgnH = async (name: string) => await _getPlayerField(name, Fields.IGN)
 const setPlayerGameDataH = async (name: string, token: string, ign: string) => _setPlayerFields(name, stringMap([Fields.IGN], [ign]), token)
 const setPlayerStatusH = async (name: string, token: string, status: string, status_code: string) => _setPlayerFields(name, stringMap([Fields.STATUS, Fields.STATUS_CODE], [status, status_code]), token)
 
@@ -177,7 +181,7 @@ const getKeywordSubstitutionsH = async () => substitutions ??= await _getField(d
 const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await _getField(doc(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS))
 const commandBanH = async (username: string, commandName: string) => _arrayFieldPush(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
 const commandUnbanH = async (username: string, commandName: string) => _arrayFieldRemove(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
-const isCommandBannedH = async (username: string, commandName: string) => (await _getField(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username) as string[]).includes(commandName)
+const isCommandBannedH = async (username: string, commandName: string) => (await _getField(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, []) as string[]).includes(commandName)
 
 // Helper functions continued... //
 

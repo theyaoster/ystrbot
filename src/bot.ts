@@ -9,7 +9,7 @@ import { unauthorizedOops } from "./lib/util/error-responses"
 
 function initializeBot() {
     const commands = Object(commandModules)
-    commands[helpCommand.data.name] = helpCommand
+    commands[helpCommand.data.name] = helpCommand // Import the help command separately as it's not exported by commands/index
 
     const client = new Client({
         intents: [

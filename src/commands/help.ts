@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
     .setDescription("see what commands ystrbot supports")
 
 // Modules to exclude when importing
-const HELP_DESC_OVERRIDE = "to show this message again"
+const HELP_DESC_OVERRIDE = "show this message again"
 const GROUP_NAMES = ["LFG commands", "Registration/registered user comands", "Voice-related commands", "Miscellaneous"]
 const GROUP_DEFINITONS : Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">[][] = [
     [commands.val.data, commands.yes.data, commands.iamafragl0rd.data, commands.iamnotafragl0rd.data],

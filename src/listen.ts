@@ -1,7 +1,7 @@
 import express from "express"
 import _ from "underscore"
 import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract, setPlayerGameData } from "./lib/firestore"
-import { sleep } from "./lib/util/data-structure-utils"
+import { sleepSeconds } from "./lib/util/data-structure-utils"
 import { discordConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { Client, Guild, GuildMember, Role } from "discord.js"
 import config from "./config/config"
@@ -18,7 +18,7 @@ const GET_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
 const PUT_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.CONTRACT_AGENT]
 const PUT_PLAYER_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.IGN]
 
-const SLEEP_TIME = 1000 // ms
+const SLEEP_TIME_SECONDS = 1 // second
 
 // Status code regexes
 const DELIMITER = ";"
@@ -48,7 +48,7 @@ let guild : Guild | undefined
 signInAndLoadDiscordConfig() // This also initializes the Firestore connection
 waitForDiscordConfig().then(async () => {
     while (!client.isReady()) {
-        await sleep(SLEEP_TIME) // Wait for client to initialize
+        await sleepSeconds(SLEEP_TIME_SECONDS) // Wait for client to initialize
     }
 
     guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
@@ -167,7 +167,7 @@ async function validateRequest(request: express.Request, response: express.Respo
 
     // Wait for initialization to complete if needed
     while (!initialized) {
-        await sleep(SLEEP_TIME)
+        await sleepSeconds(SLEEP_TIME_SECONDS)
     }
 
     return

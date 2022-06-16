@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
 import { findBestMatch } from "string-similarity"
 import _ from "underscore"
-import { sleep } from "../lib/util/data-structure-utils"
+import { sleepSeconds } from "../lib/util/data-structure-utils"
 import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore"
 import { fetchAgents } from "../lib/valorant-content"
 
@@ -32,7 +32,7 @@ export async function execute(interaction: CommandInteraction, __: Client) {
 
         // Buffer to see if contract is reverted
         for (const __ of _.range(MAX_WAIT_COUNT)) {
-            await sleep(WAIT_PERIOD * 1000)
+            await sleepSeconds(WAIT_PERIOD)
 
             const checkContract = await getPlayerContractInternal(name)
             if (checkContract == currentAgent) {
