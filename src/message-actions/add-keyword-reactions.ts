@@ -1,6 +1,6 @@
-import { Client, Message } from "discord.js"
+import { Client, GuildEmoji, Message } from "discord.js"
 import _ from "underscore"
-import { withoutEmojis } from "../lib/util/data-structure-utils"
+import { nameToEmoji, withoutEmojis } from "../lib/util/data-structure-utils"
 import { isBot } from "../lib/util/discord-utils"
 import { getKeywordSubstitutions, getKeywordEmojiLists } from "../lib/firestore"
 
@@ -26,9 +26,12 @@ export async function execute(message: Message, __: Client) {
         if (!chosenEmojiId) {
             return console.log(`No emoji available for ${kw}!`)
         }
-        const emoji = message.guild?.emojis.cache.get(chosenEmojiId)
+
+        let emoji : GuildEmoji | string | undefined = message.guild?.emojis.cache.get(chosenEmojiId)
+        emoji ??= nameToEmoji(chosenEmojiId)
+
         if (!emoji) {
-            return console.error(`Bad emoji ID ${chosenEmojiId} for agent ${kw}!`)
+            return console.error(`Couldn't resolve emoji ${chosenEmojiId} for keyword ${kw}.`)
         }
 
         message.react(emoji).catch(console.error)

@@ -27,8 +27,8 @@ const STARTUP_REGEX = /^STARTUP;.*$/
 const LOBBY_REGEX = /^MENUS;(DEFAULT|CUSTOM_GAME_SETUP);.*$/
 const QUEUE_REGEX = /^MENUS;MATCHMAKING;.*$/
 const PREGAME_REGEX = /^PREGAME;.*$/
-const RANGE_REGEX = /^INGAME;[a-zA-Z]*;ShootingRange$/
-const INGAME_REGEX = /^INGAME;[a-zA-Z]*;[a-zA-Z]*(?<!ShootingRange)$/
+const RANGE_REGEX = /^INGAME;[a-zA-Z_]*;ShootingRange$/
+const INGAME_REGEX = /^INGAME;[a-zA-Z_]*;[a-zA-Z]*(?<!ShootingRange)$/
 
 const STATUS_ROLE_MAP = new Map<RegExp, Role>()
 
