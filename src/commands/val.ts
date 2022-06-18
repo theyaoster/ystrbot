@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, TextChannel, GuildMember, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
-import { commandFromTextChannel, findEmoji, name } from "../lib/util/discord-utils"
+import { commandFromTextChannel, findEmoji, preferredName } from "../lib/util/discord-utils"
 import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/trackers/ping-tracker"
 import { findBestMatch } from "string-similarity"
 import { readableTimeMinutes, readableTimeSeconds, sleepMinutes } from "../lib/util/data-structure-utils"
@@ -41,7 +41,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
     const guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
     const valRole = guild.roles.cache.get(discordConfig.VAL_ROLE_ID)!
-    const username = name(member)
+    const username = preferredName(member)
 
     // Validate params (if provided)
     const delayRaw = interaction.options.getInteger("delay_in_min")

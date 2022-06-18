@@ -6,11 +6,12 @@ import got from "got"
 import ytdl from "ytdl-core"
 import { FFmpeg } from "prism-media"
 import { sendBotMessage } from "../util/discord-utils"
-import { timeCode } from "../util/data-structure-utils"
+import { nameFromDirectUrl, readableTimeSeconds, timeCode } from "../util/data-structure-utils"
 
 const VOTE_FRACTION_NEEDED = 0.5
 const MAX_DURATION = 24 * 3600 * 1000 // ms
 const PADDING_FRAMES = 50
+const DEFAULT_PERCEIVED_LOUDNESS_MULTIPLIER = 0.5 // for ear safety
 
 const YOUTUBE_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu.be\/)(?:[a-zA-Z0-9\-_]{11})(?:(?:\?|&)t=([0-9]+))?/
 const FFMPEG_OPUS_ARGUMENTS = ['-analyzeduration', '0', '-acodec', 'libopus', '-f', 'opus', '-ar', '48000', '-ac', '2']
@@ -99,6 +100,7 @@ export async function processAudioQueue(client: Client) {
         let resource
         try {
             resource = getOggResource(request.url, request.yt, request.start)
+            resource.volume?.setVolumeLogarithmic(DEFAULT_PERCEIVED_LOUDNESS_MULTIPLIER)
         } catch (error: any) {
             console.error(`Error occurred while creating audio resource: ${error.stack}`)
 
@@ -132,7 +134,7 @@ export async function createAudioRequest(requester: GuildMember, url: string, ch
     const yt = !_.isNull(match)
 
     // Name of the video or file we're getting our audio from
-    const title = yt ? (await ytdl.getBasicInfo(url)).videoDetails.title : url.substring(url.lastIndexOf('/') + 1)
+    const title = yt ? (await ytdl.getBasicInfo(url)).videoDetails.title : nameFromDirectUrl(url)
     const start = yt ? (match.length > 0 ? parseInt(match[1]) : 0) : 0
 
     const requestData: AudioRequest = { requester, url, yt, start, duration, title, channel, skipVotes: new Set<GuildMember>() }
@@ -162,12 +164,12 @@ export function generateBotPlayingMessage() {
 // Convert an audio request to a human-readable format
 export function requestToString(request: AudioRequest) {
     let baseString = request.title
-    let parenData : string[] = []
+    const parenData : string[] = []
     if (request.start > 0) {
-        parenData.push(`at ${Math.floor(request.start / 60)}:${String(request.start % 60).padStart(2, "0")}`)
+        parenData.push(`at ${timeCode(request.start)}`)
     }
     if (request.duration) {
-        parenData.push("for " + (request.duration >= 60 ? `${Math.floor(request.duration / 60)} minutes ${request.duration % 60} seconds` : `${request.duration} seconds`))
+        parenData.push(`for ${readableTimeSeconds(request.duration)}`)
     }
 
     if (!_.isEmpty(parenData)) {
@@ -197,7 +199,7 @@ function getOggResource(url: string, yt: boolean, start: number) {
     const remoteAudioStream = rawStream.pipe(new FFmpeg({ args }))
     remoteAudioStream.on("error", error => { console.error(`Error while processing "${url}" in ffmpeg: ${error}`) }) // This can happen when a request is skipped
 
-    return createAudioResource(remoteAudioStream, { inputType: StreamType.OggOpus, silencePaddingFrames: PADDING_FRAMES })
+    return createAudioResource(remoteAudioStream, { inputType: StreamType.OggOpus, silencePaddingFrames: PADDING_FRAMES, inlineVolume: true })
 }
 
 // Mark request as complete - this is also run when a request is skipped

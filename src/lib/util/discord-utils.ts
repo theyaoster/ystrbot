@@ -3,7 +3,7 @@ import _ from "underscore"
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses"
 import { discordConfig } from "../../config/discord-config"
 import { getConfigsFromFirestore, getDebugData } from "../firestore"
-import { sleep } from "./data-structure-utils"
+import { sleep, sleepSeconds } from "./data-structure-utils"
 
 const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
 
@@ -74,7 +74,7 @@ export function self(client: Client) {
 }
 
 // Get the preferred nickname of a member if possible (otherwise get their username)
-export function name(member: GuildMember) {
+export function preferredName(member: GuildMember) {
     return member.nickname ? member.nickname : member.user.username
 }
 
@@ -84,18 +84,33 @@ export function findEmoji(alias: string, client: Client) {
 }
 
 // Get the channel that the bot sends updates to
-export async function sendBotMessage(client: Client, message: string, interaction?: CommandInteraction) {
+export async function sendBotMessage(client: Client, message: string, interaction?: CommandInteraction, timeoutSeconds?: number) {
     const botChannel = client.channels.cache.get(discordConfig.BOT_TEXT_CHANNEL_ID) as TextChannel
+
+    // Send message
+    let promise
     if (interaction) {
         if (interaction.channelId == botChannel.id) {
-            interaction.reply(message)
-            return null
+            promise = interaction.reply(message)
         } else {
             interaction.reply({ content: `See ${botChannel} for output.`, ephemeral: true })
-            return botChannel.send(message)
+            promise = botChannel.send(message)
         }
     } else {
-        return botChannel.send(message)
+        promise = botChannel.send(message)
+    }
+
+    // Delete the message if a timeout is specified
+    if (timeoutSeconds) {
+        promise.then(async output => {
+            await sleepSeconds(timeoutSeconds)
+
+            if (output instanceof Message) {
+                output.delete()
+            } else {
+                interaction?.deleteReply()
+            }
+        })
     }
 }
 

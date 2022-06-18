@@ -1,3 +1,4 @@
+import { URL } from "url"
 import converter from "number-to-words"
 import _ from "underscore"
 import * as dismoji from "discord-emoji"
@@ -91,4 +92,15 @@ export function readableTimeSeconds(seconds: number) {
 // Whether a string corresponds to a command defined in src/commands
 export function isCommand(commandName: string) {
     return commandName in Object(commandModules)
+}
+
+// Attempt to get the name of a file from a direct URL
+export function nameFromDirectUrl(url: string) {
+    const components = new URL(url)
+    const fileName = components.pathname.split("/").find(piece => piece.includes("."))
+    if (!fileName) {
+        throw new Error(`Not a direct URL: ${url}`)
+    }
+
+    return fileName
 }

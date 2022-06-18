@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel, findEmoji } from "../lib/util/discord-utils"
+import { commandFromTextChannel, findEmoji, sendBotMessage } from "../lib/util/discord-utils"
 import { getPlayerStatuses } from "../lib/firestore"
 import _ from "underscore"
 
@@ -17,7 +17,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
     getPlayerStatuses().then(statuses => {
         if (_.isEmpty(statuses)) {
-            interaction.reply(`I don't see anyone online ${findEmoji("omencry", client)}`)
+            interaction.reply({ content: `I don't see anyone online ${findEmoji("omencry", client)}`, ephemeral: true })
         } else {
             const maxLength = Math.max(...(Object.keys(statuses).map(name => name.length)))
             let displayedContent = "```"
@@ -26,7 +26,8 @@ export async function execute(interaction: CommandInteraction, client: Client) {
             })
             displayedContent += "```"
 
-            interaction.reply(displayedContent)
+            // Show player statuses in the bot channel
+            sendBotMessage(client, displayedContent, interaction)
         }
     }).catch(console.error)
 }
