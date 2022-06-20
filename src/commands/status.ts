@@ -10,14 +10,14 @@ export const data = new SlashCommandBuilder()
     .setName("status")
     .setDescription("see the in-game status of all registered players (offline players will be hidden)")
 
-export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannel(interaction, client)) {
+export async function execute(interaction: CommandInteraction, __: Client) {
+    if (!commandFromTextChannel(interaction)) {
         return
     }
 
     getPlayerStatuses().then(statuses => {
         if (_.isEmpty(statuses)) {
-            interaction.reply({ content: `I don't see anyone online ${findEmoji("omencry", client)}`, ephemeral: true })
+            interaction.reply({ content: `I don't see anyone online ${findEmoji("omencry")}`, ephemeral: true })
         } else {
             const maxLength = Math.max(...(Object.keys(statuses).map(name => name.length)))
             let displayedContent = "```"
@@ -27,7 +27,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
             displayedContent += "```"
 
             // Show player statuses in the bot channel
-            sendBotMessage(client, displayedContent, interaction)
+            sendBotMessage(displayedContent, interaction)
         }
     }).catch(console.error)
 }

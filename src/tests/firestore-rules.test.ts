@@ -37,16 +37,17 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
         doc(db, `/${Collections.GAME_DATA}/${Documents.PLAYERS}`),
         doc(db, `/${Collections.TICKETS}/${Documents.AUTHORS}`),
         doc(db, `/${Collections.MEMBERS}/${Documents.COMMAND_BANS}`),
+        doc(db, `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`),
     ]
 
     for (const roDoc of readOnlyDocs) {
-        console.log(`Testing authenticated queries on read-only doc ${roDoc.id}`)
-
         await assertFails(setDoc(roDoc, NEW_DATA_PAYLOAD))
         await assertFails(setDoc(roDoc, NEW_DATA_PAYLOAD, { merge: true }))
         await assertFails(updateDoc(roDoc, NEW_DATA_PAYLOAD))
         await assertFails(deleteDoc(roDoc))
         await assertSucceeds(getDoc(roDoc))
+
+        console.log(`Test for authenticated queries on read-only doc ${roDoc.id} passed.`)
     }
 
     for (const ruoDoc of readUpdateOnlyDocs) {
@@ -55,6 +56,8 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
         await assertSucceeds(updateDoc(ruoDoc, NEW_DATA_PAYLOAD))
         await assertFails(deleteDoc(ruoDoc))
         await assertSucceeds(getDoc(ruoDoc))
+
+        console.log(`Test for authenticated queries on read-update-only doc ${ruoDoc.id} passed.`)
     }
 
     // Allow toggling debug
@@ -76,6 +79,7 @@ async function performTestsForUnauthenticatedUser(context: RulesTestContext) {
         doc(db, `/${Collections.GAME_DATA}/${Documents.PLAYERS}`),
         doc(db, `/${Collections.TICKETS}/${Documents.AUTHORS}`),
         doc(db, `/${Collections.MEMBERS}/${Documents.COMMAND_BANS}`),
+        doc(db, `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`),
     ]
 
     for (const doc of allDocs) {
@@ -83,6 +87,8 @@ async function performTestsForUnauthenticatedUser(context: RulesTestContext) {
         await assertFails(updateDoc(doc, NEW_DATA_PAYLOAD))
         await assertFails(deleteDoc(doc))
         await assertFails(getDoc(doc))
+
+        console.log(`Test for unauthenticated queries on doc ${doc.id} passed.`)
     }
 }
 

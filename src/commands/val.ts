@@ -2,10 +2,11 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, TextChannel, GuildMember, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
-import { commandFromTextChannel, findEmoji, preferredName } from "../lib/util/discord-utils"
+import { commandFromTextChannel, findEmoji, pingChannel, preferredName } from "../lib/util/discord-utils"
 import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/trackers/ping-tracker"
 import { findBestMatch } from "string-similarity"
-import { readableTimeMinutes, readableTimeSeconds, sleepMinutes } from "../lib/util/data-structure-utils"
+import { readableTimeMinutes, readableTimeSeconds } from "../lib/util/data-structure-utils"
+import { sleepMinutes } from "../lib/util/async-utils"
 
 const MIN_DELAY = 1 // 1 minute
 const MAX_DELAY = 24 * 60 // 1 day max
@@ -21,22 +22,22 @@ export const data = new SlashCommandBuilder()
     .addStringOption(option => option.setName("mode").setDescription("The mode you want to play (unrated, comp, custom, etc.).").setRequired(false))
 
 export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannel(interaction, client)) {
+    if (!commandFromTextChannel(interaction)) {
         return
     }
 
     const member = interaction.member as GuildMember
-    const pingChannel = client.channels.cache.get(discordConfig.VAL_PING_CHANNEL_ID) as TextChannel
+    const playChannel = await pingChannel()
 
     // Check for naughty behavior
     let cooldownLeft = cooldownRemaining()
     if (isPingBanned(member)) {
-        const whereString = interaction.channel === pingChannel ? "" : ` in ${pingChannel}`
-        return interaction.reply({ content: `bitch did you not read what I said${whereString}? ${findEmoji("lmao", client)}`, ephemeral: true })
+        const whereString = interaction.channel === playChannel ? "" : ` in ${playChannel}`
+        return interaction.reply({ content: `bitch did you not read what I said${whereString}? ${findEmoji("lmao")}`, ephemeral: true })
     } else if (!isNaN(cooldownLeft)) {
-        return interaction.reply({ content: `wait at least **${readableTimeSeconds(cooldownLeft)}** before pinging again ${findEmoji("sagetilt", client)} (on cooldown)`, ephemeral: true })
+        return interaction.reply({ content: `wait at least **${readableTimeSeconds(cooldownLeft)}** before pinging again ${findEmoji("sagetilt")} (on cooldown)`, ephemeral: true })
     } else if (exceedsActivePingLimit(member)) {
-        return interaction.reply({ content: `slow your roll homie ${findEmoji("no", client)} (too many queued pings)`, ephemeral: true })
+        return interaction.reply({ content: `slow your roll homie ${findEmoji("no")} (too many queued pings)`, ephemeral: true })
     }
 
     const guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
@@ -62,7 +63,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
     if (!isNaN(delayMinutes)) {
         // Notify the channel that a ping is on the way
-        const delayPromise = handleNotificationCountdown(username, pingChannel, delayMinutes, numActivePings(member) < 1, mode)
+        const delayPromise = handleNotificationCountdown(username, playChannel, delayMinutes, numActivePings(member) < 1, mode)
         trackActivePing(member, delayPromise)
         await delayPromise // Wait for the countdown to complete before proceeding
     }
@@ -80,11 +81,11 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     const modeString = mode ? ` (**${mode}**)` : ""
     const baseText = `${username} - ${valRole}${modeString}`
 
-    pingChannel.send(baseText).then(async sentMessage => {
+    playChannel.send(baseText).then(async sentMessage => {
         // Determine which message is visible in channel that can be interacted with
         trackFiredPing(member, sentMessage, sentMessage)
         if (exceedsFiredPingRateLimit(member)) {
-            tempPingBan(member, pingChannel) // Punish naughty spammers
+            tempPingBan(member, playChannel) // Punish naughty spammers
         }
 
         // If removed from the gaming role, add them back

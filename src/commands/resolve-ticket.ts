@@ -10,8 +10,8 @@ export const data = new SlashCommandBuilder()
     .setDescription("resolve a ticket you created (ADMIN)")
     .addBooleanOption(option => option.setName("accepted").setDescription("Whether the ticket was accepted.").setRequired(true))
 
-export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannelThread(interaction, client)) {
+export async function execute(interaction: CommandInteraction, _: Client) {
+    if (!commandFromTextChannelThread(interaction)) {
         return
     }
 

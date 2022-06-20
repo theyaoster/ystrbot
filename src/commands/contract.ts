@@ -2,8 +2,8 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
 import { findBestMatch } from "string-similarity"
 import _ from "underscore"
-import { sleepSeconds } from "../lib/util/data-structure-utils"
 import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore"
+import { sleepSeconds } from "../lib/util/async-utils"
 import { fetchAgents } from "../lib/valorant-content"
 
 const MAX_WAIT_COUNT = 15

@@ -11,9 +11,9 @@ export function useTextChannelThreadOops(interaction: CommandInteraction, channe
 }
 
 export function genericOops(interaction: CommandInteraction) {
-    return interaction.reply({ content: `uh oh, something went wrong. please report this using /ticket! ${findEmoji("kjlove", interaction.client)}`, ephemeral: true })
+    return interaction.reply({ content: `uh oh, something went wrong. please report this using /ticket! ${findEmoji("kjlove")}`, ephemeral: true })
 }
 
 export function unauthorizedOops(interaction: CommandInteraction) {
-    return interaction.reply({ content: `you're not allowed to do that ${findEmoji("teehee", interaction.client)}`, ephemeral: true })
+    return interaction.reply({ content: `you're not allowed to do that ${findEmoji("teehee")}`, ephemeral: true })
 }

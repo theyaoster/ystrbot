@@ -8,8 +8,8 @@ export const data = new SlashCommandBuilder()
     .setName("debug")
     .setDescription("toggle debug mode (ADMIN)")
 
-export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannel(interaction, client)) {
+export async function execute(interaction: CommandInteraction, _: Client) {
+    if (!commandFromTextChannel(interaction)) {
         return
     }
 

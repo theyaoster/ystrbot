@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
-import { sleepMinutes } from "../lib/util/data-structure-utils"
 import { getPlayerIgn } from "../lib/firestore"
+import { sleepMinutes } from "../lib/util/async-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("ign")

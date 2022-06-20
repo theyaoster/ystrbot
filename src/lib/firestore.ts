@@ -86,7 +86,7 @@ async function _setPlayerFields(name: string, fieldMap: { [field: string] : stri
     const oldPlayerData = token ? await _authenticate(name, token) : await _getField(doc(db, Collections.GAME_DATA, Documents.PLAYERS), name)
     for (const key of Object.keys(fieldMap)) {
         if (!(key in oldPlayerData)) {
-            console.log(`WARN: setting previously undefined field ${key} for ${name}.`)
+            console.log(`Setting previously undefined field ${key} for ${name}.`)
         }
 
         oldPlayerData[key] = fieldMap[key]
@@ -96,17 +96,28 @@ async function _setPlayerFields(name: string, fieldMap: { [field: string] : stri
     return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
 }
 
-// Helper for pushing values to an array field
-async function _arrayFieldPush(docRef: DocumentReference, fieldName: string, ...values: any[]) {
-    const currentData = await _getField(docRef, fieldName)
+// Helper for pushing values to an array field - returns whether the values were successfully pushed
+async function _arrayFieldPush(docRef: DocumentReference, fieldName: string, checkForDuplicates: boolean, ...values: any[]) {
+    const currentData = await _getField(docRef, fieldName, [])
     const currentArray = currentData ? currentData : []
+
+    if (checkForDuplicates) {
+        const duplicates = values.filter(value => currentArray.includes(value))
+        if (!_.isEmpty(duplicates)) {
+            console.error(`Could not push values - duplicates found: ${duplicates}`)
+
+            return false
+        }
+    }
+
     currentArray.push(...values)
     updateDoc(docRef, stringMap([fieldName], [currentArray]))
+    return true
 }
 
-// Helper for removing values to an array field
+// Helper for removing values to an array field - returns whether the values were successfully removed
 async function _arrayFieldRemove(docRef: DocumentReference, fieldName: string, ...values: any[]) {
-    const currentData = await _getField(docRef, fieldName)
+    const currentData = await _getField(docRef, fieldName, null)
     if (!currentData) {
         throw new Error(`${docRef.path}/${fieldName} does not exist.`)
     }
@@ -116,13 +127,15 @@ async function _arrayFieldRemove(docRef: DocumentReference, fieldName: string, .
     for (const value of values) {
         const index = currentArray.indexOf(value)
         if (index < 0) {
-            throw new Error(`Value ${value} does not exist in the array at ${docRef.path}/${fieldName}!`)
+            console.error(`Value '${value}' does not exist in the array at ${docRef.path}/${fieldName}!`)
+            return false
         } else {
-            delete currentArray[index]
+            currentArray.splice(index, 1)
         }
     }
 
     updateDoc(docRef, stringMap([fieldName], [currentArray]))
+    return true
 }
 
 // Retrieve all static player data
@@ -163,6 +176,8 @@ const getDebugH = async () => await _getField(doc(db, Collections.CONFIG, Docume
 const setDebugH = async (newValue: boolean) => updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
 const getDebugDataH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.DEBUG_DATA)
 const getEndpointH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.ENDPOINT)
+const getMostRecentPathH = async () => await _getField(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), Fields.MOST_RECENT_PATH)
+const setMostRecentPathH = async (newPath: string) => updateDoc(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), stringMap([Fields.MOST_RECENT_PATH], [newPath]))
 
 const unregisterPlayerH = async (name: string) => updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), stringMap([name], [deleteField()]))
 const getPlayerContractInternalH = async (name: string) => await _getPlayerField(name, Fields.CONTRACT_AGENT)
@@ -179,7 +194,7 @@ const removeTicketH = async (ticketThreadId: string) => updateDoc(doc(db, Collec
 const getTicketOverridesH = async () => await _getField(doc(db, Collections.CONFIG, Documents.TICKET_OVERRIDES))
 const getKeywordSubstitutionsH = async () => substitutions ??= await _getField(doc(db, Collections.KEYWORD_TO_EMOJI, Documents.SUBSTITUTIONS))
 const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await _getField(doc(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS))
-const commandBanH = async (username: string, commandName: string) => _arrayFieldPush(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
+const commandBanH = async (username: string, commandName: string) => _arrayFieldPush(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, true, commandName)
 const commandUnbanH = async (username: string, commandName: string) => _arrayFieldRemove(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
 const isCommandBannedH = async (username: string, commandName: string) => (await _getField(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, []) as string[]).includes(commandName)
 
@@ -229,6 +244,9 @@ export const getKeywordEmojiLists = () => _withHandling({ getKeywordEmojiListsH 
 export const commandBan = (username: string, commandName: string) => _withHandling({ commandBanH }, username, commandName) // Ban a user from using a certain command
 export const commandUnban = (username: string, commandName: string) => _withHandling({ commandUnbanH }, username, commandName) // Unban a user from using a certain command
 export const isCommandBanned = (username: string, commandName: string) => _withHandling({ isCommandBannedH }, username, commandName) // Whether a user is banned from using a command
+
+export const getMostRecentPath = () => _withHandling({ getMostRecentPathH }) // Get the most recent patch notes href path
+export const setMostRecentPath = (newPath: string) => _withHandling({ setMostRecentPathH }, newPath) // Set the most recent patch notes href path
 
 export const getPlayerContract = (name: string, token: string) => _withHandling({ getPlayerContractH }, name, token) // Get player's contract agent
 export const getPlayerContractInternal = (name: string) => _withHandling({ getPlayerContractInternalH }, name) // Get player's contract without auth (this is not exposed in an API)

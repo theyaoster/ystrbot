@@ -12,7 +12,7 @@ export const data = new SlashCommandBuilder()
     .addChannelOption(option => option.setName("channel").setDescription("The voice channel to play in.").setRequired(false))
     .addIntegerOption(option => option.setName("duration").setDescription("How many seconds to play the audio for.").setRequired(false))
 
-export async function execute(interaction: CommandInteraction, client: Client) {
+export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.member as GuildMember
     const url = interaction.options.getString("url", true)
     const channelOption = interaction.options.getChannel("channel")
@@ -41,8 +41,8 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     if (idle()) {
         console.log("Processing audio queue now...")
 
-        processAudioQueue(client).then(() => {
-            sendBotMessage(client, "_Queue completed._")
+        processAudioQueue().then(() => {
+            sendBotMessage("_Queue completed._")
         })
     }
 }

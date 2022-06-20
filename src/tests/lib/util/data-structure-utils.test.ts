@@ -1,14 +1,5 @@
 import * as utils from "../../../lib/util/data-structure-utils"
 
-test("sleep sleeps for a given number of ms", async () => {
-    const wait = 1234
-    const before = (new Date()).valueOf()
-    await utils.sleep(wait)
-    const after = (new Date()).valueOf()
-
-    expect((after - before) / 1000).toBeCloseTo(wait / 1000, 1)
-})
-
 test("withoutEmojis removes custom emojis", () => {
     expect(utils.withoutEmojis("I love <:kekw:945738495893450433>! :heart:")).toBe("I love ! ")
 })
@@ -82,8 +73,12 @@ test("readableTimeSeconds represents input number of seconds as minutes and seco
     expect(utils.readableTimeSeconds(1033)).toBe("17m 13s")
 })
 
-test("isCommand determines whether a string is a command", () => {
-    expect(utils.isCommand("val")).toBe(true)
-    expect(utils.isCommand("queue")).toBe(true)
-    expect(utils.isCommand("halp")).toBe(false)
+test("nameFromDirectUrl throws error if the url is not direct", () => {
+    expect(() => utils.nameFromDirectUrl("https://www.google.com")).toThrow(Error)
+})
+
+test("nameFromDirectUrl fetches the filename", () => {
+    expect(utils.nameFromDirectUrl("https://www.google.com/something.js")).toBe("something.js")
+    expect(utils.nameFromDirectUrl("https://upload.wikimedia.org/wikipedia/commons/7/7d/Margaryn_022.jpg")).toBe("Margaryn_022.jpg")
+    expect(utils.nameFromDirectUrl("https://static.wikia.nocookie.net/valorant/images/d/df/YoruPick.mp3/revision/latest?cb=20210702142559")).toBe("YoruPick.mp3")
 })

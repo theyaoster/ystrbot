@@ -1,5 +1,5 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, NoSubscriberBehavior, StreamType, VoiceConnection } from "@discordjs/voice"
-import { Client, GuildMember, Message, VoiceBasedChannel } from "discord.js"
+import { GuildMember, Message, VoiceBasedChannel } from "discord.js"
 import { Queue } from "queue-typescript"
 import _ from "underscore"
 import got from "got"
@@ -71,14 +71,14 @@ export function voteSkip(member: GuildMember) {
 }
 
 // Play ALL audio currently queued up
-export async function processAudioQueue(client: Client) {
+export async function processAudioQueue() {
     while (audioTracker.queue.length > 0) {
         const request = audioTracker.queue.dequeue()
 
         audioTracker.current = request
         audioTracker.skipVotesNeeded = Math.max(1, Math.floor((audioTracker.current.channel.members.size - 1) * VOTE_FRACTION_NEEDED))
 
-        audioTracker.currentMessage = (await sendBotMessage(client, generateBotPlayingMessage()))!
+        audioTracker.currentMessage = (await sendBotMessage(generateBotPlayingMessage()))!
 
         // Check if we need to switch channels
         if (request.channel.id != audioTracker.connection?.joinConfig.channelId) {
@@ -104,7 +104,7 @@ export async function processAudioQueue(client: Client) {
         } catch (error: any) {
             console.error(`Error occurred while creating audio resource: ${error.stack}`)
 
-            sendBotMessage(client, `Skipping ${request.title} as an error occurred while creating audio resource.`)
+            sendBotMessage(`Skipping ${request.title} as an error occurred while creating audio resource.`)
 
             continue
         }

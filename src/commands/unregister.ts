@@ -7,8 +7,8 @@ export const data = new SlashCommandBuilder()
     .setName("unregister")
     .setDescription("delete your registered account")
 
-export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannel(interaction, client)) {
+export async function execute(interaction: CommandInteraction, _: Client) {
+    if (!commandFromTextChannel(interaction)) {
         return
     }
 

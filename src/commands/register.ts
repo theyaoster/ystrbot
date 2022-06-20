@@ -8,8 +8,8 @@ export const data = new SlashCommandBuilder()
     .setName("register")
     .setDescription("register an account for using ystrbot and VALORANT-ystr functionality")
 
-export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannel(interaction, client)) {
+export async function execute(interaction: CommandInteraction, _: Client) {
+    if (!commandFromTextChannel(interaction)) {
         return
     }
 

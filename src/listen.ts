@@ -1,11 +1,11 @@
 import express from "express"
 import _ from "underscore"
 import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract, setPlayerGameData } from "./lib/firestore"
-import { sleepSeconds } from "./lib/util/data-structure-utils"
-import { discordConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
-import { Client, Guild, GuildMember, Role } from "discord.js"
-import config from "./config/config"
+import { discordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
+import { GuildMember, Role } from "discord.js"
 import { Fields } from "./config/firestore-schema"
+import { guild, waitForDiscordElements } from "./lib/util/discord-utils"
+import { wait } from "./lib/util/async-utils"
 
 const APP = express()
 const HOST = "0.0.0.0"
@@ -18,8 +18,6 @@ const GET_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
 const PUT_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.CONTRACT_AGENT]
 const PUT_PLAYER_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.IGN]
 
-const SLEEP_TIME_SECONDS = 1 // second
-
 // Status code regexes
 const DELIMITER = ";"
 const AFK_REGEX = /^AFK;.*$/
@@ -30,37 +28,23 @@ const PREGAME_REGEX = /^PREGAME;.*$/
 const RANGE_REGEX = /^INGAME;[a-zA-Z_]*;ShootingRange$/
 const INGAME_REGEX = /^INGAME;[a-zA-Z_]*;[a-zA-Z]*(?<!ShootingRange)$/
 
+// Map these status code regexes to the corresponding role
 const STATUS_ROLE_MAP = new Map<RegExp, Role>()
-
-// Create Discord client
-const client = new Client({
-    intents: [
-        "GUILDS",
-        "GUILD_MEMBERS",
-    ]
-})
-
-client.login(config.DISCORD_TOKEN)
 
 // Authenticate and load status roles
 let initialized = false
-let guild : Guild | undefined
 signInAndLoadDiscordConfig() // This also initializes the Firestore connection
-waitForDiscordConfig().then(async () => {
-    while (!client.isReady()) {
-        await sleepSeconds(SLEEP_TIME_SECONDS) // Wait for client to initialize
-    }
-
-    guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
+waitForDiscordElements().then(async () => {
+    const GUILD = await guild()
 
     // Populate status roles
-    STATUS_ROLE_MAP.set(AFK_REGEX, (await guild?.roles.fetch(discordConfig.AFK_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(LOBBY_REGEX, (await guild?.roles.fetch(discordConfig.IN_LOBBY_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(AFK_REGEX, (await GUILD.roles.fetch(discordConfig.AFK_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(LOBBY_REGEX, (await GUILD.roles.fetch(discordConfig.IN_LOBBY_ROLE_ID))!)
     STATUS_ROLE_MAP.set(STARTUP_REGEX, STATUS_ROLE_MAP.get(LOBBY_REGEX)!)
-    STATUS_ROLE_MAP.set(QUEUE_REGEX, (await guild?.roles.fetch(discordConfig.IN_QUEUE_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(PREGAME_REGEX, (await guild?.roles.fetch(discordConfig.IN_PREGAME_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(RANGE_REGEX, (await guild?.roles.fetch(discordConfig.IN_RANGE_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(INGAME_REGEX, (await guild?.roles.fetch(discordConfig.IN_GAME_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(QUEUE_REGEX, (await GUILD.roles.fetch(discordConfig.IN_QUEUE_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(PREGAME_REGEX, (await GUILD.roles.fetch(discordConfig.IN_PREGAME_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(RANGE_REGEX, (await GUILD.roles.fetch(discordConfig.IN_RANGE_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(INGAME_REGEX, (await GUILD.roles.fetch(discordConfig.IN_GAME_ROLE_ID))!)
 
     initialized = true
 })
@@ -80,7 +64,7 @@ APP.put("/live_status", async (request, response) => {
     // Set the player status
     setPlayerStatus(request.body[NAME_KEY], request.body[Fields.SECRET], status, status_code).then(async _ => {
         const playerData = await getPlayerStaticData()
-        const member = await guild!.members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
+        const member = await (await guild()).members.fetch(playerData[request.body[NAME_KEY]][Fields.DISCORD_ID])
         if (!member) {
             throw Error(`Couldn't find member with discord ID ${playerData[request.body[NAME_KEY]][Fields.DISCORD_ID]}`)
         } else {
@@ -167,7 +151,7 @@ async function validateRequest(request: express.Request, response: express.Respo
 
     // Wait for initialization to complete if needed
     while (!initialized) {
-        await sleepSeconds(SLEEP_TIME_SECONDS)
+        await wait()
     }
 
     return

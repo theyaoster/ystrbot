@@ -1,15 +1,15 @@
-import { getConfigsFromFirestore, getDebug, signIn } from "../lib/firestore"
-import { handleDebug } from "../lib/util/discord-utils"
-import { sleepSeconds } from "../lib/util/data-structure-utils"
+import _ from "underscore"
+import { getConfigsFromFirestore, getDebug, getDebugData, signIn } from "../lib/firestore"
+import { wait } from "../lib/util/async-utils"
 
-const BUFFER = 3 // seconds
+const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
 
-export const discordConfig: Record<string, string> = {}
+export const discordConfig : Record<string, string> = {}
 
 // Export this promise so other modules can block until the config is loaded
 export async function waitForDiscordConfig() {
     while (Object.keys(discordConfig).length === 0) {
-        await sleepSeconds(BUFFER)
+        await wait()
     }
 }
 
@@ -24,11 +24,18 @@ export function signInAndLoadDiscordConfig() {
     signIn().then(() => {
         signedIn = true
         getConfigsFromFirestore().then(async configData => {
+            // Populate discord config
             Object.keys(configData).forEach(key => discordConfig[key] = configData[key])
+
+            // Populate discord channels
+
             const debugValue = await getDebug()
             if (debugValue === true) {
                 console.log("Starting in debug mode...")
-                handleDebug(debugValue)
+
+                 // Change role ID to testing role
+                const debugData = await getDebugData()
+                discordConfig[VAL_ROLE_ID_NAME] = debugData[VAL_ROLE_ID_NAME]
             }
 
             console.log("Discord configs successfully loaded from Firestore.")

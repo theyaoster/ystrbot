@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
     .setName("queue")
     .setDescription("view the queue of audio requests")
 
-export async function execute(interaction: CommandInteraction, client: Client) {
+export async function execute(interaction: CommandInteraction, _: Client) {
     const queue = audioTracker.queue
     const current = audioTracker.current
 
@@ -25,8 +25,8 @@ export async function execute(interaction: CommandInteraction, client: Client) {
             place++
         }
 
-        sendBotMessage(client, queueContents, interaction, QUEUE_MESSAGE_TIMEOUT)
+        sendBotMessage(queueContents, interaction, QUEUE_MESSAGE_TIMEOUT)
     } else {
-        sendBotMessage(client, "Queue is empty.", interaction, QUEUE_MESSAGE_TIMEOUT)
+        sendBotMessage("Queue is empty.", interaction, QUEUE_MESSAGE_TIMEOUT)
     }
 }

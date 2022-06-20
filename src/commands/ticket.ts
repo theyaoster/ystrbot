@@ -11,7 +11,7 @@ export const data = new SlashCommandBuilder()
     .addStringOption(option => option.setName("description").setDescription("enter ticket content here").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, client: Client) {
-    if (!commandFromTextChannel(interaction, client)) {
+    if (!commandFromTextChannel(interaction)) {
         return
     }
 

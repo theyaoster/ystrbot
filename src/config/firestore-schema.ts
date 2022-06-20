@@ -4,6 +4,7 @@ export enum Collections {
     GAME_DATA = "game_data",
     TICKETS = "tickets",
     MEMBERS = "members",
+    JOB_DATA = "job_data",
 }
 
 export enum Documents {
@@ -15,6 +16,7 @@ export enum Documents {
     PLAYERS = "players",
     AUTHORS = "authors",
     COMMAND_BANS = "command_bans",
+    PATCH_NOTES_SCRAPER = "patch_notes_scraper",
 }
 
 export enum Fields {
@@ -28,4 +30,5 @@ export enum Fields {
     STATUS_CODE = "status_code",
     SECRET = "secret",
     DISCORD_ID = "discord_id",
+    MOST_RECENT_PATH = "most_recent_path",
 }

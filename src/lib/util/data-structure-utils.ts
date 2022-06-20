@@ -2,30 +2,9 @@ import { URL } from "url"
 import converter from "number-to-words"
 import _ from "underscore"
 import * as dismoji from "discord-emoji"
-import * as commandModules from "../../commands/index"
 
 const EMOJI_NAMES = Object.assign({}, ...Object.values(dismoji))
 const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
-
-// Idle wait in ms
-export async function sleep(milliseconds: number) {
-    await new Promise(f => setTimeout(f, milliseconds))
-}
-
-// Idle wait in seconds
-export async function sleepSeconds(seconds: number) {
-    await sleep(seconds * 1000)
-}
-
-// Idle wait in minutes
-export async function sleepMinutes(minutes: number) {
-    await sleep(minutes * 60 * 1000)
-}
-
-// Idle wait in hours
-export async function sleepHours(hours: number) {
-    await sleep(hours * 60 * 60 * 1000)
-}
 
 // Filters custom emojis out of a string
 export function withoutEmojis(message: string) {
@@ -87,11 +66,6 @@ export function readableTimeSeconds(seconds: number) {
     const minutes = Math.floor(seconds / 60)
     const remainder = seconds % 60
     return minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`
-}
-
-// Whether a string corresponds to a command defined in src/commands
-export function isCommand(commandName: string) {
-    return commandName in Object(commandModules)
 }
 
 // Attempt to get the name of a file from a direct URL

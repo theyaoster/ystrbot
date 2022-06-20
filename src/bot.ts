@@ -6,6 +6,7 @@ import * as messageActionModules from "./message-actions"
 import { waitForDiscordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
 import { isCommandBanned } from "./lib/firestore"
 import { unauthorizedOops } from "./lib/util/error-responses"
+import startJobs from "./jobs"
 
 function initializeBot() {
     const commands = Object(commandModules)
@@ -44,9 +45,14 @@ function initializeBot() {
 }
 
 async function main() {
-    signInAndLoadDiscordConfig() // This also initializes the Firestore connection
+    // This also initializes the Firestore connection
+    signInAndLoadDiscordConfig()
 
+    // Only initialize bot (discord client) after config is loaded
     waitForDiscordConfig().then(initializeBot).catch(reason => console.error(`Error occurred while waiting for discord config to load: ${reason}`))
+
+    // Start cron jobs
+    startJobs()
 }
 
 main().catch(reason => console.error(`Error occurred during initialization: ${reason}`))
