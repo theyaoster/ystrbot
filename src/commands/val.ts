@@ -2,17 +2,17 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, TextChannel, GuildMember, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
 import { discordConfig } from "../config/discord-config"
-import { commandFromTextChannel, findEmoji, pingChannel, preferredName } from "../lib/util/discord-utils"
+import { commandFromTextChannel, findEmoji, pingChannel, preferredName, resolveInteraction } from "../lib/util/discord-utils"
 import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/trackers/ping-tracker"
 import { findBestMatch } from "string-similarity"
 import { readableTimeMinutes, readableTimeSeconds } from "../lib/util/data-structure-utils"
 import { sleepMinutes } from "../lib/util/async-utils"
+import { fetchGameModes } from "../lib/valorant-content"
 
 const MIN_DELAY = 1 // 1 minute
 const MAX_DELAY = 24 * 60 // 1 day max
 const MIN_TTL = 1 // 1 minute
 const MAX_TTL = 12 * 60 // 12 hours max
-const MODES = [ "unrated", "competitive", "custom", "spike rush", "escalation", "replication", "deathmatch", "snowball fight" ]
 
 export const data = new SlashCommandBuilder()
     .setName("val")
@@ -44,22 +44,18 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     const valRole = guild.roles.cache.get(discordConfig.VAL_ROLE_ID)!
     const username = preferredName(member)
 
-    // Validate params (if provided)
-    const delayRaw = interaction.options.getInteger("delay_in_min")
-    if (delayRaw && (delayRaw < MIN_DELAY || delayRaw > MAX_DELAY)) {
-        return interaction.reply({ content: `Delay must be between ${MIN_DELAY} and ${MAX_DELAY} (inclusive).`, ephemeral: true })
-    }
-    const delayMinutes = delayRaw || NaN // NaN means no delay (default)
-    const ttlRaw = interaction.options.getInteger("ttl_in_min")
-    if (ttlRaw && (ttlRaw < MIN_TTL || ttlRaw > MAX_TTL)) {
-        return interaction.reply({ content: `TTL must be between ${MIN_TTL} and ${MAX_TTL} (inclusive).`, ephemeral: true })
-    }
-    const ttlMinutes = ttlRaw || NaN // NaN means infinite TTL (default)
-    const modeRaw = interaction.options.getString("mode")
-    const mode = modeRaw ? findBestMatch(modeRaw.toLowerCase(), MODES).bestMatch.target : undefined
+    // Validate params
+    const delayMinutes = getBoundedIntegerParam("delay_in_min", MIN_DELAY, MAX_DELAY, interaction)
+    if (_.isNull(delayMinutes)) return
 
-    // Reply to user
-    interaction.reply({ content: `ping incoming ${isNaN(delayMinutes) ? "**now**" : `in **${readableTimeMinutes(delayMinutes)}**`}.`, ephemeral: true })
+    const ttlMinutes = getBoundedIntegerParam("ttl_in_min", MIN_TTL, MAX_TTL, interaction)
+    if (_.isNull(ttlMinutes)) return
+
+    const modeRaw = interaction.options.getString("mode")
+    const mode = modeRaw ? findBestMatch(modeRaw.toLowerCase(), await fetchGameModes()).bestMatch.target : undefined
+
+    // Don't reply to the user
+    resolveInteraction(interaction)
 
     if (!isNaN(delayMinutes)) {
         // Notify the channel that a ping is on the way
@@ -132,4 +128,15 @@ async function handleNotificationCountdown(username: string, pingChannel: TextCh
     const finalText = buildNotif(username, "", `${modeString}**now** (ping is below). :tada:`)
     sentNotif!.edit(finalText)
     sentNotif!.unpin()
+}
+
+// Helper for retrieving an integer parameter and checking if it's within bounds, if not it returns null
+function getBoundedIntegerParam(paramName: string, min: number, max: number, interaction: CommandInteraction) {
+    const rawValue = interaction.options.getInteger(paramName)
+    if (rawValue && (rawValue < min || rawValue > max)) {
+        interaction.reply({ content: `${paramName} must be between ${min} and ${max}, inclusive.`, ephemeral: true })
+        return null
+    }
+
+    return rawValue ? rawValue : NaN
 }

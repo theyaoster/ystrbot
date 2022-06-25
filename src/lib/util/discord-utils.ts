@@ -72,7 +72,7 @@ export function isAdmin(member: GuildMember | null) {
 
 // Whether the member is in the bots role
 export function isBot(member: GuildMember | null) {
-    return !_.isNull(member) && member.roles.cache.has(discordConfig.BOTS_ROLE_ID)
+    return (!_.isNull(member) && member.roles.cache.has(discordConfig.BOTS_ROLE_ID)) || member?.user.bot
 }
 
 // Get the preferred nickname of a member if possible (otherwise get their username)
@@ -90,6 +90,17 @@ export function isCommand(commandName: string) {
     const commandModules = require("../../commands/index")
     const helpCommand = require("../../commands/help")
     return commandName in Object(commandModules) || commandName === helpCommand.data.name
+}
+
+// Resolves a command interaction without a reply... nice and hacky!
+export function resolveInteraction(interaction: CommandInteraction) {
+    interaction.deferReply()
+    interaction.deleteReply()
+}
+
+// Get the latest message (by a specific member, if provided) in a particular channel
+export function getLatestMessage(channel: TextChannel, member?: GuildMember) {
+    return member ? channel.messages.cache.find(msg => msg.author.id === member.id) : channel.messages.cache.get(channel.lastMessageId!)
 }
 
 // Whether the command came from a text channel or not

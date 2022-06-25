@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, Message } from "discord.js"
 import { getLatestPing } from "../lib/trackers/ping-tracker"
 import { trackYes } from "../lib/trackers/response-tracker"
-import { commandFromTextChannel, pingChannel } from "../lib/util/discord-utils"
+import { commandFromTextChannel, pingChannel, resolveInteraction } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("yes")
@@ -26,6 +26,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     }
 
     const member = interaction.member as GuildMember
-    const added = await trackYes(pingMessage, member, await pingChannel())
-    interaction.reply({ content: added ? "you've reported for duty" : "you've left your duty", ephemeral: true })
+    trackYes(pingMessage, member, await pingChannel())
+
+    resolveInteraction(interaction)
 }

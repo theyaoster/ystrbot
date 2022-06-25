@@ -23,7 +23,8 @@ function initializeBot() {
         ]
     })
 
-    // Event handling starts
+    // ***** DISCORD EVENT HANDLING STARTS ***** //
+
     client.once("ready", () => console.log("Ready to rumble."))
 
     client.on("interactionCreate", async interaction => {
@@ -39,7 +40,12 @@ function initializeBot() {
     client.on("messageCreate", async message => {
         Object.values(messageActionModules).forEach(action => action.execute(message, client))
     })
-    // Event handling ends
+
+    // Make sure we log errors
+    client.on("error", error => console.error(`Discord client error: ${error.stack}`))
+    client.on("unhandledRejection", error => console.error(`Unhandled rejection error: ${error.stack}`))
+
+    // ***** DISCORD EVENT HANDLING ENDS ***** //
 
     client.login(config.DISCORD_TOKEN)
 }

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
 import { createAudioRequest, idle, processAudioQueue } from "../lib/trackers/audio-tracker"
-import { sendBotMessage } from "../lib/util/discord-utils"
+import { resolveInteraction, sendBotMessage } from "../lib/util/discord-utils"
 
 const VALID_URL_REGEX = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/
 
@@ -30,9 +30,8 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     // Enqueue this request
     const channelToJoin = channelOption ? channelOption : member.voice.channel!
     try {
-        const requestData = await createAudioRequest(member, url, channelToJoin, duration)
-
-        interaction.reply({ content: `Added "${requestData.title}" to the queue. Use **/queue** to view the queue.`, ephemeral: true })
+        createAudioRequest(member, url, channelToJoin, duration)
+        resolveInteraction(interaction)
     } catch (error) {
         interaction.reply({ content: `Failed to queue that: ${error}`, ephemeral: true })
     }

@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
     .setName("command_unban")
     .setDescription("unban a user from using a certain command")
     .addUserOption(option => option.setName("user").setDescription("the user to unbanhammer").setRequired(true))
-    .addStringOption(option => option.setName("command_name").setDescription("if the command is /command, type command for this parameter").setRequired(true))
+    .addStringOption(option => option.setName("command_name").setDescription("if the command is /foo, type foo here").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.options.getMember("user", true) as GuildMember
