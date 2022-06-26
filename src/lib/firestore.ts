@@ -173,29 +173,33 @@ async function _authenticate(name: string, token: string) {
 // Helper functions that initialize caches of db data and fetch the data
 const getConfigsFromFirestoreH = async () => firestoreConfigs ??= await _getField(doc(db, Collections.CONFIG, Documents.DISCORD_ELEMENTS))
 const getDebugH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.DEBUG)
-const setDebugH = async (newValue: boolean) => updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
+const setDebugH = async (newValue: boolean) => await updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
 const getDebugDataH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.DEBUG_DATA)
 const getEndpointH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.ENDPOINT)
-const getMostRecentPathH = async () => await _getField(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), Fields.MOST_RECENT_PATH)
-const setMostRecentPathH = async (newPath: string) => updateDoc(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), stringMap([Fields.MOST_RECENT_PATH], [newPath]))
 
-const unregisterPlayerH = async (name: string) => updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), stringMap([name], [deleteField()]))
+const getMostRecentPathH = async () => await _getField(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), Fields.MOST_RECENT_PATH)
+const setMostRecentPathH = async (newPath: string) => await updateDoc(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), stringMap([Fields.MOST_RECENT_PATH], [newPath]))
+const getYoutubeChannelIdH = async (fieldName: string) => await _getField(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), fieldName)
+const getLatestVideoIdH = async (idName: string) => await _getField(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), idName)
+const setLatestVideoIdH = async (idName: string, newId: string) => await updateDoc(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), stringMap([idName], [newId]))
+
+const unregisterPlayerH = async (name: string) => await updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), stringMap([name], [deleteField()]))
 const getPlayerContractInternalH = async (name: string) => await _getPlayerField(name, Fields.CONTRACT_AGENT)
 const getPlayerContractH = async (name: string, token: string) => await _getPlayerField(name, Fields.CONTRACT_AGENT, token)
-const setPlayerContractInternalH = async (name: string, contract_agent: string) => _setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]))
-const setPlayerContractH = async (name: string, token: string, contract_agent: string) => _setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]), token)
+const setPlayerContractInternalH = async (name: string, contract_agent: string) => await _setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]))
+const setPlayerContractH = async (name: string, token: string, contract_agent: string) => await _setPlayerFields(name, stringMap([Fields.CONTRACT_AGENT], [contract_agent]), token)
 const getPlayerIgnH = async (name: string) => await _getPlayerField(name, Fields.IGN)
-const setPlayerGameDataH = async (name: string, token: string, ign: string) => _setPlayerFields(name, stringMap([Fields.IGN], [ign]), token)
-const setPlayerStatusH = async (name: string, token: string, status: string, status_code: string) => _setPlayerFields(name, stringMap([Fields.STATUS, Fields.STATUS_CODE], [status, status_code]), token)
+const setPlayerGameDataH = async (name: string, token: string, ign: string) => await _setPlayerFields(name, stringMap([Fields.IGN], [ign]), token)
+const setPlayerStatusH = async (name: string, token: string, status: string, status_code: string) => await _setPlayerFields(name, stringMap([Fields.STATUS, Fields.STATUS_CODE], [status, status_code]), token)
 
-const trackTicketH = async (author: GuildMember, ticketThreadId: string) => updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), stringMap([ticketThreadId], [author.id]))
+const trackTicketH = async (author: GuildMember, ticketThreadId: string) => await updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), stringMap([ticketThreadId], [author.id]))
 const isTicketAuthorH = async (caller: GuildMember, ticketThreadId: string) => await _getField(doc(db, Collections.TICKETS, Documents.AUTHORS), ticketThreadId) === caller.id
-const removeTicketH = async (ticketThreadId: string) => updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), stringMap([ticketThreadId], [deleteField()]))
+const removeTicketH = async (ticketThreadId: string) => await updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), stringMap([ticketThreadId], [deleteField()]))
 const getTicketOverridesH = async () => await _getField(doc(db, Collections.CONFIG, Documents.TICKET_OVERRIDES))
 const getKeywordSubstitutionsH = async () => substitutions ??= await _getField(doc(db, Collections.KEYWORD_TO_EMOJI, Documents.SUBSTITUTIONS))
 const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await _getField(doc(db, Collections.KEYWORD_TO_EMOJI, Documents.EMOJI_IDS))
-const commandBanH = async (username: string, commandName: string) => _arrayFieldPush(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, true, commandName)
-const commandUnbanH = async (username: string, commandName: string) => _arrayFieldRemove(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
+const commandBanH = async (username: string, commandName: string) => await _arrayFieldPush(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, true, commandName)
+const commandUnbanH = async (username: string, commandName: string) => await _arrayFieldRemove(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
 const isCommandBannedH = async (username: string, commandName: string) => (await _getField(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, []) as string[]).includes(commandName)
 
 // Helper functions continued... //
@@ -203,12 +207,10 @@ const isCommandBannedH = async (username: string, commandName: string) => (await
 // Retrieve all player statuses
 async function getPlayerStatusesH() {
     const data = (await getDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS))).data() // pojo
-    if (data) {
-        const onlinePlayers = Object.keys(data).filter(name => data[name][Fields.STATUS] && data[name][Fields.STATUS] !== OFFLINE_STATUS)
-        return stringMap(onlinePlayers, onlinePlayers.map(name => data[name][Fields.STATUS]))
-    }
+    if (!data) return {}
 
-    return {}
+    const onlinePlayers = Object.keys(data).filter(name => data[name][Fields.STATUS] && data[name][Fields.STATUS] !== OFFLINE_STATUS)
+    return stringMap(onlinePlayers, onlinePlayers.map(name => data[name][Fields.STATUS]))
 }
 
 // Register a user with a token (if they don't already exist)
@@ -247,6 +249,9 @@ export const isCommandBanned = (username: string, commandName: string) => _withH
 
 export const getMostRecentPath = () => _withHandling({ getMostRecentPathH }) // Get the most recent patch notes href path
 export const setMostRecentPath = (newPath: string) => _withHandling({ setMostRecentPathH }, newPath) // Set the most recent patch notes href path
+export const getYoutubeChannelId = (fieldName: string) => _withHandling({ getYoutubeChannelIdH }, fieldName) // Get a stored Youtube channel ID
+export const getLatestVideoId = (idName: string) => _withHandling({ getLatestVideoIdH }, idName) // Get a latest video ID
+export const setLatestVideoId = (idName: string, newId: string) => _withHandling({ setLatestVideoIdH }, idName, newId) // Set a latest video ID
 
 export const getPlayerContract = (name: string, token: string) => _withHandling({ getPlayerContractH }, name, token) // Get player's contract agent
 export const getPlayerContractInternal = (name: string) => _withHandling({ getPlayerContractInternalH }, name) // Get player's contract without auth (this is not exposed in an API)

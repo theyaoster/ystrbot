@@ -26,6 +26,7 @@ let GUILD : Guild | undefined
 let PATCH_NOTES_CHANNEL : TextChannel | undefined
 let BOT_CHANNEL : TextChannel | undefined
 let PING_CHANNEL : TextChannel | undefined
+let VIDEO_CHANNEL : TextChannel | undefined
 let FEEDBACK_CHANNEL : TextChannel | undefined
 let VAL_ROLE : Role | undefined
 let BOT_MEMBER : GuildMember | undefined
@@ -40,6 +41,7 @@ waitForDiscordConfig().then(async () => {
     PATCH_NOTES_CHANNEL = client.channels.cache.get(discordConfig.PATCH_NOTES_CHANNEL_ID) as TextChannel
     BOT_CHANNEL = client.channels.cache.get(discordConfig.BOT_TEXT_CHANNEL_ID) as TextChannel
     PING_CHANNEL = client.channels.cache.get(discordConfig.VAL_PING_CHANNEL_ID) as TextChannel
+    VIDEO_CHANNEL = client.channels.cache.get(discordConfig.VIDEO_CHANNEL_ID) as TextChannel
     FEEDBACK_CHANNEL = client.channels.cache.get(discordConfig.FEEDBACK_CHANNEL_ID) as TextChannel
 
     VAL_ROLE = GUILD.roles.cache.get(discordConfig.VAL_ROLE_ID)
@@ -61,6 +63,7 @@ export async function guild() { await waitForDiscordElements(); return GUILD! }
 export async function botChannel() { await waitForDiscordElements(); return BOT_CHANNEL! }
 export async function patchNotesChannel() { await waitForDiscordElements(); return PATCH_NOTES_CHANNEL! }
 export async function pingChannel() { await waitForDiscordElements(); return PING_CHANNEL! }
+export async function videoChannel() { await waitForDiscordElements(); return VIDEO_CHANNEL! }
 export async function feedbackChannel() { await waitForDiscordElements(); return FEEDBACK_CHANNEL! }
 export async function valRole() { await waitForDiscordElements(); return VAL_ROLE! }
 export async function self() { await waitForDiscordElements(); return BOT_MEMBER! }

@@ -55,10 +55,10 @@ async function main() {
     signInAndLoadDiscordConfig()
 
     // Only initialize bot (discord client) after config is loaded
-    waitForDiscordConfig().then(initializeBot).catch(reason => console.error(`Error occurred while waiting for discord config to load: ${reason}`))
-
-    // Start cron jobs
-    startJobs()
+    waitForDiscordConfig().then(() => {
+        initializeBot()
+        startJobs() // Start cron jobs
+    }).catch(reason => console.error(`Error occurred while waiting for discord config to load: ${reason}`))
 }
 
 main().catch(reason => console.error(`Error occurred during initialization: ${reason}`))

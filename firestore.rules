@@ -4,6 +4,9 @@ service cloud.firestore {
     function keysSimilar() {
         return request.resource.data.keys().hasAll(resource.data.keys()) || resource.data.keys().hasAll(request.resource.data.keys());
     }
+    function keysIdentical() {
+        return request.resource.data.keys() == resource.data.keys();
+    }
   	match /configuration/admin/{document=**} {
     	allow read: if request.auth != null;
         allow update: if request.resource.data.keys() == resource.data.keys() && request.resource.data.debug_data == resource.data.debug_data;
@@ -32,6 +35,10 @@ service cloud.firestore {
     match /job_data/patch_notes_scraper/{document=**} {
         allow read: if request.auth != null;
         allow update: if request.auth != null && keysSimilar();
+    }
+    match /job_data/youtube_scraper/{document=**} {
+        allow read: if request.auth != null;
+        allow update: if request.auth != null && keysIdentical();
     }
   }
 }

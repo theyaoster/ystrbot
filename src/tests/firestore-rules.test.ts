@@ -12,6 +12,22 @@ import { MOCK_DATA } from "./firestore-test-data"
 setLogLevel("error")
 
 const NEW_DATA_PAYLOAD = { "bob": { "status": "test" } }
+const READ_ONLY_PATHS = [
+    `/${Collections.CONFIG}/${Documents.ADMIN}`,
+    `/${Collections.CONFIG}/${Documents.DISCORD_ELEMENTS}`,
+    `/${Collections.CONFIG}/${Documents.TICKET_OVERRIDES}`,
+    `/${Collections.KEYWORD_TO_EMOJI}/${Documents.EMOJI_IDS}`,
+    `/${Collections.KEYWORD_TO_EMOJI}/${Documents.SUBSTITUTIONS}`,
+]
+const READ_AND_UPDATE_ONLY_PATHS = [
+    `/${Collections.GAME_DATA}/${Documents.PLAYERS}`,
+    `/${Collections.TICKETS}/${Documents.AUTHORS}`,
+    `/${Collections.MEMBERS}/${Documents.COMMAND_BANS}`,
+    `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`,
+]
+const UNCATEGORIZED_PATHS = [
+    `/${Collections.JOB_DATA}/${Documents.YOUTUBE_SCRAPER}`,
+]
 
 // Helper for initializing emulator data
 function insertMockData(context: RulesTestContext) {
@@ -25,20 +41,8 @@ function insertMockData(context: RulesTestContext) {
 async function performTestsForAuthenticatedUser(context: RulesTestContext) {
     const db = context.firestore()
 
-    const readOnlyDocs = [
-        doc(db, `/${Collections.CONFIG}/${Documents.ADMIN}`),
-        doc(db, `/${Collections.CONFIG}/${Documents.DISCORD_ELEMENTS}`),
-        doc(db, `/${Collections.CONFIG}/${Documents.TICKET_OVERRIDES}`),
-        doc(db, `/${Collections.KEYWORD_TO_EMOJI}/${Documents.EMOJI_IDS}`),
-        doc(db, `/${Collections.KEYWORD_TO_EMOJI}/${Documents.SUBSTITUTIONS}`),
-    ]
-
-    const readUpdateOnlyDocs = [
-        doc(db, `/${Collections.GAME_DATA}/${Documents.PLAYERS}`),
-        doc(db, `/${Collections.TICKETS}/${Documents.AUTHORS}`),
-        doc(db, `/${Collections.MEMBERS}/${Documents.COMMAND_BANS}`),
-        doc(db, `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`),
-    ]
+    const readOnlyDocs = READ_ONLY_PATHS.map(path => doc(db, path))
+    const readUpdateOnlyDocs = READ_AND_UPDATE_ONLY_PATHS.map(path => doc(db, path))
 
     for (const roDoc of readOnlyDocs) {
         await assertFails(setDoc(roDoc, NEW_DATA_PAYLOAD))
@@ -60,27 +64,29 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
         console.log(`Test for authenticated queries on read-update-only doc ${ruoDoc.id} passed.`)
     }
 
+    const jobDataDoc = doc(db, `/${Collections.JOB_DATA}/${Documents.YOUTUBE_SCRAPER}`)
+    await assertFails(setDoc(jobDataDoc, NEW_DATA_PAYLOAD, { merge: false }))
+    await assertFails(setDoc(jobDataDoc, NEW_DATA_PAYLOAD, { merge: true }))
+    await assertFails(updateDoc(jobDataDoc, NEW_DATA_PAYLOAD))
+    await assertSucceeds(updateDoc(jobDataDoc, stringMap([Fields.LAST_GAMING_ID], ["abcdefg"])))
+    await assertFails(deleteDoc(jobDataDoc))
+    await assertSucceeds(getDoc(jobDataDoc))
+
+    console.log(`Test for authenticated queries on doc ${jobDataDoc.id} passed.`)
+
     // Allow toggling debug
     const adminDoc = doc(db, `/${Collections.CONFIG}/${Documents.ADMIN}`)
     await assertSucceeds(updateDoc(adminDoc, stringMap([Fields.DEBUG], [true])))
     await assertFails(updateDoc(adminDoc, stringMap([Fields.DEBUG, "test"], [false, "data"])))
+
+    console.log(`Test for toggling debug passed.`)
 }
 
 // Test unauthenticated queries
 async function performTestsForUnauthenticatedUser(context: RulesTestContext) {
     const db = context.firestore()
 
-    const allDocs = [
-        doc(db, `/${Collections.CONFIG}/${Documents.ADMIN}`),
-        doc(db, `/${Collections.CONFIG}/${Documents.DISCORD_ELEMENTS}`),
-        doc(db, `/${Collections.CONFIG}/${Documents.TICKET_OVERRIDES}`),
-        doc(db, `/${Collections.KEYWORD_TO_EMOJI}/${Documents.EMOJI_IDS}`),
-        doc(db, `/${Collections.KEYWORD_TO_EMOJI}/${Documents.SUBSTITUTIONS}`),
-        doc(db, `/${Collections.GAME_DATA}/${Documents.PLAYERS}`),
-        doc(db, `/${Collections.TICKETS}/${Documents.AUTHORS}`),
-        doc(db, `/${Collections.MEMBERS}/${Documents.COMMAND_BANS}`),
-        doc(db, `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`),
-    ]
+    const allDocs = [...READ_ONLY_PATHS, ...READ_AND_UPDATE_ONLY_PATHS, ...UNCATEGORIZED_PATHS].map(path => doc(db, path))
 
     for (const doc of allDocs) {
         await assertFails(setDoc(doc, NEW_DATA_PAYLOAD))

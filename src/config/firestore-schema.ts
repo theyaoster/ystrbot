@@ -17,6 +17,7 @@ export enum Documents {
     AUTHORS = "authors",
     COMMAND_BANS = "command_bans",
     PATCH_NOTES_SCRAPER = "patch_notes_scraper",
+    YOUTUBE_SCRAPER = "youtube_scraper",
 }
 
 export enum Fields {
@@ -31,4 +32,8 @@ export enum Fields {
     SECRET = "secret",
     DISCORD_ID = "discord_id",
     MOST_RECENT_PATH = "most_recent_path",
+    GAMING_CHANNEL_ID = "gaming_channel_id",
+    VALORANT_CHANNEL_ID = "valorant_channel_id",
+    LAST_GAMING_ID = "last_gaming_id",
+    LAST_VALORANT_ID = "last_valorant_id",
 }
