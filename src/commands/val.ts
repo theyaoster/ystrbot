@@ -1,8 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, TextChannel, GuildMember, Message, GuildMemberRoleManager } from "discord.js"
 import _ from "underscore"
-import { discordConfig } from "../config/discord-config"
-import { commandFromTextChannel, findEmoji, pingChannel, preferredName, resolveInteraction } from "../lib/util/discord-utils"
+import { commandFromTextChannel, findEmoji, pingChannel, preferredName, resolveInteraction, valRole } from "../lib/util/discord-utils"
 import { trackActivePing, trackFiredPing, exceedsActivePingLimit, exceedsFiredPingRateLimit, tempPingBan, isPingBanned, cooldownRemaining, numActivePings } from "../lib/trackers/ping-tracker"
 import { findBestMatch } from "string-similarity"
 import { readableTimeMinutes, readableTimeSeconds } from "../lib/util/data-structure-utils"
@@ -21,13 +20,13 @@ export const data = new SlashCommandBuilder()
     .addIntegerOption(option => option.setName("ttl_in_min").setDescription("How long this ping will be up for before being marked as expired.").setRequired(false))
     .addStringOption(option => option.setName("mode").setDescription("The mode you want to play (unrated, comp, custom, etc.).").setRequired(false))
 
-export async function execute(interaction: CommandInteraction, client: Client) {
+export async function execute(interaction: CommandInteraction, __: Client) {
     if (!commandFromTextChannel(interaction)) {
         return
     }
 
     const member = interaction.member as GuildMember
-    const playChannel = await pingChannel()
+    const playChannel = await pingChannel(member)
 
     // Check for naughty behavior
     let cooldownLeft = cooldownRemaining()
@@ -40,8 +39,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
         return interaction.reply({ content: `slow your roll homie ${findEmoji("no")} (too many queued pings)`, ephemeral: true })
     }
 
-    const guild = client.guilds.cache.get(discordConfig.GUILD_ID)!
-    const valRole = guild.roles.cache.get(discordConfig.VAL_ROLE_ID)!
+    const role = await valRole(member)
     const username = preferredName(member)
 
     // Validate params
@@ -68,14 +66,14 @@ export async function execute(interaction: CommandInteraction, client: Client) {
     // workaround I can think of to avoid pinging the caller
     const memberRoles = member.roles as GuildMemberRoleManager
     let isGamer = false
-    if (memberRoles.cache.has(discordConfig.VAL_ROLE_ID)) {
-        await memberRoles.remove(valRole)
+    if (memberRoles.cache.has(role.id)) {
+        await memberRoles.remove(role)
         isGamer = true
     }
 
     // Ping gamers
     const modeString = mode ? ` (**${mode}**)` : ""
-    const baseText = `${username} - ${valRole}${modeString}`
+    const baseText = `${username} - ${role}${modeString}`
 
     playChannel.send(baseText).then(async sentMessage => {
         // Determine which message is visible in channel that can be interacted with
@@ -86,7 +84,7 @@ export async function execute(interaction: CommandInteraction, client: Client) {
 
         // If removed from the gaming role, add them back
         if (isGamer) {
-            memberRoles.add(valRole)
+            memberRoles.add(role)
         }
 
         // Handle TTL if specified

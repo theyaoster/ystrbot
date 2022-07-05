@@ -10,6 +10,6 @@ export const MOCK_DATA = stringMap(Object.values(Collections).sort(), [
     stringMap([Documents.PLAYERS], [{ "johndoe": stringMap([Fields.SECRET, Fields.STATUS, Fields.DISCORD_ID], ["somekindofhash", "Offline", "9389083243243"]), "alice": stringMap([Fields.SECRET, Fields.DISCORD_ID], ["hash", "ingame"]) }]),
     stringMap([Documents.PATCH_NOTES_SCRAPER, Documents.YOUTUBE_SCRAPER], [ stringMap([Fields.MOST_RECENT_PATH], ["/en-us/update"]), stringMap([Fields.GAMING_CHANNEL_ID, Fields.VALORANT_CHANNEL_ID, Fields.LAST_GAMING_ID, Fields.LAST_VALORANT_ID], ["fakeurl1", "fakeurl2", "fakeid1", "fakeid2"]) ]),
     stringMap([Documents.EMOJI_IDS, Documents.SUBSTITUTIONS], [{ "agent1": ["123891203223", "274893274982"], "agent2": ["478908094344"] }, { "old": "new" }]),
-    stringMap([Documents.COMMAND_BANS], [{ "johndoe": "val" }]),
+    stringMap([Documents.COMMAND_BANS, Documents.SILENCES], [{ "johndoe": "val" }, { "johndoe": 84902380423 }]),
     stringMap([Documents.AUTHORS], [{ "12345678910": "23478923243" }]),
 ])

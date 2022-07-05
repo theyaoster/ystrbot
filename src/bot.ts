@@ -4,7 +4,7 @@ import * as commandModules from "./commands"
 import * as helpCommand from "./commands/help"
 import * as messageActionModules from "./message-actions"
 import { waitForDiscordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
-import { isCommandBanned } from "./lib/firestore"
+import { isCommandBanned, isSilenced } from "./lib/firestore"
 import { unauthorizedOops } from "./lib/util/error-responses"
 import startJobs from "./jobs"
 
@@ -30,6 +30,7 @@ function initializeBot() {
     client.on("interactionCreate", async interaction => {
         if (interaction.isCommand()) {
             if (await isCommandBanned(interaction.user.username, interaction.commandName)) {
+                // Check if user is banned from using this command
                 unauthorizedOops(interaction)
             } else {
                 commands[interaction.commandName].execute(interaction, client)
@@ -38,7 +39,12 @@ function initializeBot() {
     })
 
     client.on("messageCreate", async message => {
-        Object.values(messageActionModules).forEach(action => action.execute(message, client))
+        if (await isSilenced(message.author.username)) {
+            // Check if user is silenced
+            message.delete()
+        } else {
+            Object.values(messageActionModules).forEach(action => action.execute(message, client))
+        }
     })
 
     // Make sure we log errors

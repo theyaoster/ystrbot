@@ -4,7 +4,7 @@ import ytdl from "ytdl-core"
 import { load } from "cheerio"
 import _ from "underscore"
 import { getLatestVideoId, getMostRecentPath, getYoutubeChannelId, setLatestVideoId, setMostRecentPath } from "./lib/firestore"
-import { patchNotesChannel, videoChannel } from "./lib/util/discord-utils"
+import { patchNotesChannel, self, videoChannel } from "./lib/util/discord-utils"
 import { Fields } from "./config/firestore-schema"
 
 const VALORANT_BASE_URL = "https://playvalorant.com"
@@ -24,7 +24,10 @@ async function getPageContent(url: string, waitCondition: (page: puppeteer.Page)
     const browser = await puppeteer.launch({ args: ['--no-sandbox'] })
     const page = await browser.newPage()
     await page.goto(url)
-    await waitCondition(page) // Wait for the first six posts to load
+
+    // Wait for some condition - to avoid reading the page content before certain elements have loaded
+    await waitCondition(page)
+
     const content = await page.content()
     browser.close()
 
@@ -57,7 +60,7 @@ async function checkForNewYoutubeVideo(channelIdField: string, getLastVideo: () 
                 console.log(`Detected new video on ${channelName} (${latestVideo.videoDetails.title}), sending link ${newLink}`)
 
                 setLastVideo(latestVideoId)
-                const channel = await videoChannel()
+                const channel = await videoChannel(await self())
                 channel.send(`From ${channelName}: ${newLink}`)
             } else {
                 console.debug(`No new video from ${channelName}.`)
@@ -100,7 +103,7 @@ const patchNotesUpdater = new CronJob("0 * * * *", () => {
             setMostRecentPath(latestPath)
 
             // Send link to the patch notes channel
-            const channel = await patchNotesChannel()
+            const channel = await patchNotesChannel(await self())
             channel.send(`VALORANT ${version} Patch Notes: ${VALORANT_BASE_URL}${latestPath}`)
         }
     }).catch(error => console.error(`Patch notes job failed to fetch page content! Cause: ${error.stack}`))

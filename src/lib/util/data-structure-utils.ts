@@ -78,3 +78,28 @@ export function nameFromDirectUrl(url: string) {
 
     return fileName
 }
+
+// Evaluate really basic arithmetic with +,-,*,/
+export function evalArithmetic(expr: string): number {
+    const lastMinus = expr.lastIndexOf("-")
+    if (lastMinus >= 0) {
+        return evalArithmetic(expr.substring(0, lastMinus)) - evalArithmetic(expr.substring(lastMinus + 1))
+    }
+
+    const lastPlus = expr.indexOf("+")
+    if (lastPlus >= 0) {
+        return evalArithmetic(expr.substring(0, lastPlus)) + evalArithmetic(expr.substring(lastPlus + 1))
+    }
+
+    const lastDivide = expr.lastIndexOf("/")
+    if (lastDivide >= 0) {
+        return evalArithmetic(expr.substring(0, lastDivide)) / evalArithmetic(expr.substring(lastDivide + 1))
+    }
+
+    const lastTimes = expr.lastIndexOf("*")
+    if (lastDivide >= 0) {
+        return evalArithmetic(expr.substring(0, lastTimes)) * evalArithmetic(expr.substring(lastTimes + 1))
+    }
+
+    return Number(expr)
+}

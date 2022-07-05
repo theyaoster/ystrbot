@@ -12,7 +12,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
 
     if (!idle()) {
         const current = audioTracker.current!
-        if (isAdmin(member) || member.id == current?.requester.id) {
+        if ((await isAdmin(member)) || member.id == current?.requester.id) {
             skip()
 
             interaction.reply({ content: `Skipping "${current?.title}".`, ephemeral: true })

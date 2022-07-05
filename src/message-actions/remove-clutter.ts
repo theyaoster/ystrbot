@@ -1,5 +1,5 @@
 import { Client, Message, TextChannel } from "discord.js"
-import { discordConfig, waitForDiscordConfig } from "../config/discord-config"
+import { getConfig, waitForDiscordConfig } from "../config/discord-config"
 import { countdown, isBot } from "../lib/util/discord-utils"
 
 const COUNTDOWN = 3 // seconds
@@ -9,14 +9,14 @@ let countdownActive = false
 // Wait for discord config to load
 async function waitForConfig() {
     await waitForDiscordConfig()
-    CHANNELS_TO_KEEP_CLEAN.push(discordConfig.FEEDBACK_CHANNEL_ID)
+    CHANNELS_TO_KEEP_CLEAN.push(getConfig().FEEDBACK_CHANNEL_ID)
 }
 
 waitForConfig()
 
-export function execute(message: Message, __: Client) {
+export async function execute(message: Message, __: Client) {
     // Skip if the message was sent by the bot
-    if (!message.channelId || !CHANNELS_TO_KEEP_CLEAN.includes(message.channelId) || isBot(message.member)) {
+    if (!message.channelId || !CHANNELS_TO_KEEP_CLEAN.includes(message.channelId) || (await isBot(message.member))) {
         return
     }
 

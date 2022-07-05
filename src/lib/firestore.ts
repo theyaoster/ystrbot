@@ -41,6 +41,20 @@ export async function signIn() {
     console.log(`Authenticated as ${signInResult.user.email}`)
 }
 
+// Wrapper that handles errors to avoid unhandled promise rejection errors
+async function _withHandling(methodDict: { [methodId: string]: (...args: any[]) => Promise<any> }, ...args: any[]) {
+    const methodName = Object.keys(methodDict)[0]
+    const method = methodDict[methodName]
+
+    try {
+        const output = args.length > 0 ? await method(...args) : await method()
+        return output
+    } catch (error: any) {
+        console.error(`Error occurred while calling ${methodName}: ${error.stack}`)
+        throw new Error(`${error}`)
+    }
+}
+
 // Helper for retrieving a field's value from a doc
 async function _getField(docRef: DocumentReference, field = DEFAULT_ROOT_KEY, defaultValue?: any) {
     const document = await getDoc(docRef)
@@ -56,18 +70,14 @@ async function _getField(docRef: DocumentReference, field = DEFAULT_ROOT_KEY, de
     return document.get(field)
 }
 
-// Wrapper that handles errors to avoid unhandled promise rejection errors
-async function _withHandling(methodDict: { [methodId: string]: (...args: any[]) => Promise<any> }, ...args: any[]) {
-    const methodName = Object.keys(methodDict)[0]
-    const method = methodDict[methodName]
-
-    try {
-        const output = args.length > 0 ? await method(...args) : await method()
-        return output
-    } catch (error: any) {
-        console.error(`Error occurred while calling ${methodName}: ${error.stack}`)
-        throw new Error(`${error}`)
+// Helper for setting a single field in a doc - returns whether the field was updated
+async function _setField(docRef: DocumentReference, field: string, value: any, replace: boolean = true) {
+    if (!replace && (await getDoc(docRef)).get(field)) {
+        return false
     }
+
+    updateDoc(docRef, stringMap([field], [value]))
+    return true
 }
 
 // Helper function for retrieving a single player string field
@@ -172,16 +182,14 @@ async function _authenticate(name: string, token: string) {
 
 // Helper functions that initialize caches of db data and fetch the data
 const getConfigsFromFirestoreH = async () => firestoreConfigs ??= await _getField(doc(db, Collections.CONFIG, Documents.DISCORD_ELEMENTS))
-const getDebugH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.DEBUG)
-const setDebugH = async (newValue: boolean) => await updateDoc(doc(db, Collections.CONFIG, Documents.ADMIN), stringMap([Fields.DEBUG], [newValue]))
 const getDebugDataH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.DEBUG_DATA)
 const getEndpointH = async () => await _getField(doc(db, Collections.CONFIG, Documents.ADMIN), Fields.ENDPOINT)
 
 const getMostRecentPathH = async () => await _getField(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), Fields.MOST_RECENT_PATH)
-const setMostRecentPathH = async (newPath: string) => await updateDoc(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), stringMap([Fields.MOST_RECENT_PATH], [newPath]))
+const setMostRecentPathH = async (newPath: string) => await _setField(doc(db, Collections.JOB_DATA, Documents.PATCH_NOTES_SCRAPER), Fields.MOST_RECENT_PATH, newPath)
 const getYoutubeChannelIdH = async (fieldName: string) => await _getField(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), fieldName)
 const getLatestVideoIdH = async (idName: string) => await _getField(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), idName)
-const setLatestVideoIdH = async (idName: string, newId: string) => await updateDoc(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), stringMap([idName], [newId]))
+const setLatestVideoIdH = async (idName: string, newId: string) => await _setField(doc(db, Collections.JOB_DATA, Documents.YOUTUBE_SCRAPER), idName, newId)
 
 const unregisterPlayerH = async (name: string) => await updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), stringMap([name], [deleteField()]))
 const getPlayerContractInternalH = async (name: string) => await _getPlayerField(name, Fields.CONTRACT_AGENT)
@@ -192,7 +200,7 @@ const getPlayerIgnH = async (name: string) => await _getPlayerField(name, Fields
 const setPlayerGameDataH = async (name: string, token: string, ign: string) => await _setPlayerFields(name, stringMap([Fields.IGN], [ign]), token)
 const setPlayerStatusH = async (name: string, token: string, status: string, status_code: string) => await _setPlayerFields(name, stringMap([Fields.STATUS, Fields.STATUS_CODE], [status, status_code]), token)
 
-const trackTicketH = async (author: GuildMember, ticketThreadId: string) => await updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), stringMap([ticketThreadId], [author.id]))
+const trackTicketH = async (author: GuildMember, ticketThreadId: string) => await _setField(doc(db, Collections.TICKETS, Documents.AUTHORS), ticketThreadId, author.id)
 const isTicketAuthorH = async (caller: GuildMember, ticketThreadId: string) => await _getField(doc(db, Collections.TICKETS, Documents.AUTHORS), ticketThreadId) === caller.id
 const removeTicketH = async (ticketThreadId: string) => await updateDoc(doc(db, Collections.TICKETS, Documents.AUTHORS), stringMap([ticketThreadId], [deleteField()]))
 const getTicketOverridesH = async () => await _getField(doc(db, Collections.CONFIG, Documents.TICKET_OVERRIDES))
@@ -201,6 +209,7 @@ const getKeywordEmojiListsH = async () => keywordToEmojiIDs ??= await _getField(
 const commandBanH = async (username: string, commandName: string) => await _arrayFieldPush(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, true, commandName)
 const commandUnbanH = async (username: string, commandName: string) => await _arrayFieldRemove(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, commandName)
 const isCommandBannedH = async (username: string, commandName: string) => (await _getField(doc(db, Collections.MEMBERS, Documents.COMMAND_BANS), username, []) as string[]).includes(commandName)
+const silenceH = async (username: string, endDate: number) => await _setField(doc(db, Collections.MEMBERS, Documents.SILENCES), username, endDate, false)
 
 // Helper functions continued... //
 
@@ -233,11 +242,21 @@ async function registerPlayerH(name: string, id: string) {
     return token
 }
 
+// Check if a member is silenced, and remove entry if it is expired
+async function isSilencedH(username: string) {
+    const docRef = doc(db, Collections.MEMBERS, Documents.SILENCES)
+    const endDate = await _getField(docRef, username, null)
+    if (!endDate || endDate > Date.now()) {
+        updateDoc(docRef, stringMap([username], [deleteField()]))
+        return false
+    } else {
+        return true
+    }
+}
+
 // Same as functions above, but with error handling
 export const getConfigsFromFirestore = () => _withHandling({ getConfigsFromFirestoreH }) // Load config in db
 export const getPlayerStaticData = () => _withHandling({ getPlayerStaticDataH: _getPlayerStaticDataH })
-export const getDebug = () => _withHandling({ getDebugH }) // Whether debug mode is on
-export const setDebug = (newValue: boolean) => _withHandling({ setDebugH }, newValue) // Toggle debug mode
 export const getDebugData = () => _withHandling({ getDebugDataH }) // Load debug data
 export const getEndpoint = () => _withHandling({ getEndpointH }) // Retrieve web endpoint
 export const getTicketOverrides = () => _withHandling({ getTicketOverridesH }) // Load ticket overrides (when tickets go to different channels)
@@ -246,6 +265,8 @@ export const getKeywordEmojiLists = () => _withHandling({ getKeywordEmojiListsH 
 export const commandBan = (username: string, commandName: string) => _withHandling({ commandBanH }, username, commandName) // Ban a user from using a certain command
 export const commandUnban = (username: string, commandName: string) => _withHandling({ commandUnbanH }, username, commandName) // Unban a user from using a certain command
 export const isCommandBanned = (username: string, commandName: string) => _withHandling({ isCommandBannedH }, username, commandName) // Whether a user is banned from using a command
+export const silence = (username: string, endDate: number) => _withHandling({ silenceH }, username, endDate) // Silence a member until a given date
+export const isSilenced = (username: string) => _withHandling({ isSilencedH }, username) // Check if a member is silenced, and remove entry if it is expired
 
 export const getMostRecentPath = () => _withHandling({ getMostRecentPathH }) // Get the most recent patch notes href path
 export const setMostRecentPath = (newPath: string) => _withHandling({ setMostRecentPathH }, newPath) // Set the most recent patch notes href path

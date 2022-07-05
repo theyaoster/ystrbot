@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, ThreadChannel } from "discord.js"
-import { discordConfig } from "../config/discord-config"
+import { getConfig } from "../config/discord-config"
 import { getTicketOverrides, isTicketAuthor, removeTicket } from "../lib/firestore"
 import { commandFromTextChannelThread, isAdmin } from "../lib/util/discord-utils"
 import { unauthorizedOops } from "../lib/util/error-responses"
@@ -11,20 +11,18 @@ export const data = new SlashCommandBuilder()
     .addBooleanOption(option => option.setName("accepted").setDescription("Whether the ticket was accepted.").setRequired(true))
 
 export async function execute(interaction: CommandInteraction, _: Client) {
-    if (!commandFromTextChannelThread(interaction)) {
-        return
-    }
+    if (!commandFromTextChannelThread(interaction)) return
 
     // Authorization check
     const member = interaction.member as GuildMember
     const thread = interaction.channel as ThreadChannel
     const isAuthor = await isTicketAuthor(member, thread.id)
-    if (!isAuthor && !isAdmin(member)) {
+    if (!isAuthor && !(await isAdmin(member))) {
         return unauthorizedOops(interaction)
     }
 
     // Check if the source thread is a ticket
-    if (thread.parentId !== discordConfig.FEEDBACK_CHANNEL_ID) {
+    if (thread.parentId !== getConfig().FEEDBACK_CHANNEL_ID) {
         const parentId = thread.parentId!
         const ticketOverrides = await getTicketOverrides()
         if (!Object.values(ticketOverrides).includes(parentId)) {

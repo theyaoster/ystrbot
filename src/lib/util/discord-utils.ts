@@ -1,10 +1,9 @@
-import { CommandInteraction, Client, GuildMember, TextChannel, Message, Guild, Role } from "discord.js"
+import { CommandInteraction, Client, GuildMember, TextChannel, Message, Guild } from "discord.js"
 import _ from "underscore"
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses"
-import { discordConfig, waitForDiscordConfig } from "../../config/discord-config"
-import { getConfigsFromFirestore, getDebugData } from "../firestore"
+import { getConfig, waitForDiscordConfig } from "../../config/discord-config"
 import config from "../../config/config"
-import { sleep, sleepSeconds, wait } from "./async-utils"
+import { sleep, sleepSeconds } from "./async-utils"
 
 // Auxiliary discord client for fetching resources
 const client = new Client({
@@ -17,65 +16,31 @@ const client = new Client({
 
 client.login(config.DISCORD_TOKEN)
 
-const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
-
-let discordLoaded = false
-
-// Cache for discord elements
+// Cache for static discord elements
 let GUILD : Guild | undefined
-let PATCH_NOTES_CHANNEL : TextChannel | undefined
-let BOT_CHANNEL : TextChannel | undefined
-let PING_CHANNEL : TextChannel | undefined
-let VIDEO_CHANNEL : TextChannel | undefined
-let FEEDBACK_CHANNEL : TextChannel | undefined
-let VAL_ROLE : Role | undefined
 let BOT_MEMBER : GuildMember | undefined
 
-// Fetch discord elements
-waitForDiscordConfig().then(async () => {
-    while (!client.isReady()) {
-        await wait()
-    }
-
-    GUILD = client.guilds.cache.get(discordConfig.GUILD_ID)!
-    PATCH_NOTES_CHANNEL = client.channels.cache.get(discordConfig.PATCH_NOTES_CHANNEL_ID) as TextChannel
-    BOT_CHANNEL = client.channels.cache.get(discordConfig.BOT_TEXT_CHANNEL_ID) as TextChannel
-    PING_CHANNEL = client.channels.cache.get(discordConfig.VAL_PING_CHANNEL_ID) as TextChannel
-    VIDEO_CHANNEL = client.channels.cache.get(discordConfig.VIDEO_CHANNEL_ID) as TextChannel
-    FEEDBACK_CHANNEL = client.channels.cache.get(discordConfig.FEEDBACK_CHANNEL_ID) as TextChannel
-
-    VAL_ROLE = GUILD.roles.cache.get(discordConfig.VAL_ROLE_ID)
-
-    BOT_MEMBER = GUILD.members.cache.get(discordConfig.CLIENT_ID)
-
-    discordLoaded = true
-})
-
-// Wait for all discord elements to be fetched
-export async function waitForDiscordElements() {
-    while (!discordLoaded) {
-        await wait()
-    }
-}
-
 // Getters for basic discord elements
-export async function guild() { await waitForDiscordElements(); return GUILD! }
-export async function botChannel() { await waitForDiscordElements(); return BOT_CHANNEL! }
-export async function patchNotesChannel() { await waitForDiscordElements(); return PATCH_NOTES_CHANNEL! }
-export async function pingChannel() { await waitForDiscordElements(); return PING_CHANNEL! }
-export async function videoChannel() { await waitForDiscordElements(); return VIDEO_CHANNEL! }
-export async function feedbackChannel() { await waitForDiscordElements(); return FEEDBACK_CHANNEL! }
-export async function valRole() { await waitForDiscordElements(); return VAL_ROLE! }
-export async function self() { await waitForDiscordElements(); return BOT_MEMBER! }
+export async function self() { await waitForDiscordConfig(); return BOT_MEMBER ??= (await guild()).members.cache.get(getConfig().CLIENT_ID)! }
+export async function guild() { await waitForDiscordConfig(); return GUILD ??= client.guilds.cache.get(getConfig().GUILD_ID)! }
+export async function botChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).BOT_TEXT_CHANNEL_ID) as TextChannel }
+export async function patchNotesChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).PATCH_NOTES_CHANNEL_ID) as TextChannel }
+export async function pingChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).VAL_PING_CHANNEL_ID) as TextChannel }
+export async function videoChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).VIDEO_CHANNEL_ID) as TextChannel }
+export async function feedbackChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).FEEDBACK_CHANNEL_ID) as TextChannel }
+export async function valRole(member?: GuildMember) { await waitForDiscordConfig(); return (await guild()).roles.cache.get(getConfig(member).VAL_ROLE_ID)! }
+export async function adminRole(member?: GuildMember) { await waitForDiscordConfig(); return (await guild()).roles.cache.get(getConfig(member).ADMIN_ROLE_ID)! }
+export async function botRole(member?: GuildMember) { await waitForDiscordConfig(); return (await guild()).roles.cache.get(getConfig(member).BOTS_ROLE_ID)! }
+
 
 // Whether the member has admin permissions
-export function isAdmin(member: GuildMember | null) {
-    return !_.isNull(member) && member.roles.cache.has(discordConfig.ADMIN_ROLE_ID)
+export async function isAdmin(member: GuildMember | null) {
+    return !_.isNull(member) && member.roles.cache.has((await adminRole()).id)
 }
 
 // Whether the member is in the bots role
-export function isBot(member: GuildMember | null) {
-    return (!_.isNull(member) && member.roles.cache.has(discordConfig.BOTS_ROLE_ID)) || member?.user.bot
+export async function isBot(member: GuildMember | null) {
+    return (!_.isNull(member) && member.roles.cache.has((await botRole()).id)) || member?.user.bot
 }
 
 // Get the preferred nickname of a member if possible (otherwise get their username)
@@ -103,7 +68,11 @@ export function resolveInteraction(interaction: CommandInteraction) {
 
 // Get the latest message (by a specific member, if provided) in a particular channel
 export function getLatestMessage(channel: TextChannel, member?: GuildMember) {
-    return member ? channel.messages.cache.find(msg => msg.author.id === member.id) : channel.messages.cache.get(channel.lastMessageId!)
+    if (member) {
+        channel.messages.cache.find(msg => msg.author.id === member.id)
+    }
+
+    return channel.messages.cache.get(channel.lastMessageId!)
 }
 
 // Whether the command came from a text channel or not
@@ -178,18 +147,5 @@ export async function sendBotMessage(message: string, interaction?: CommandInter
                 interaction?.deleteReply()
             }
         })
-    }
-}
-
-// Handle all things that change when debug is flipped
-export async function handleDebug(newValue: boolean) {
-    if (newValue) {
-        // Change role ID to testing role
-        const debugData = await getDebugData()
-        discordConfig[VAL_ROLE_ID_NAME] = debugData[VAL_ROLE_ID_NAME]
-    } else {
-        // Change role ID to actual role
-        const configData = await getConfigsFromFirestore()
-        discordConfig[VAL_ROLE_ID_NAME] = configData[VAL_ROLE_ID_NAME]
     }
 }

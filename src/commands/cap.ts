@@ -12,15 +12,20 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.options.getMember("capper")
 
     // Bots never cap
-    if (member && isBot(member as GuildMember)) return resolveInteraction(interaction)
+    if (member && (await isBot(member as GuildMember))) return interaction.reply("bot don't cap")
 
     const channel = interaction.channel as TextChannel
     const lastMessage = member ? getLatestMessage(channel, member as GuildMember) : getLatestMessage(channel)
     const billedCap = nameToEmoji("billed_cap")
 
     if (lastMessage) {
-        lastMessage.react(billedCap)
-        lastMessage.reply(billedCap)
+        if (await isBot(lastMessage.member)) {
+            channel.send(billedCap)
+        } else {
+            lastMessage.react(billedCap)
+            lastMessage.reply(billedCap)
+        }
+
         resolveInteraction(interaction)
     } else {
         interaction.reply(billedCap)

@@ -16,6 +16,7 @@ export enum Documents {
     PLAYERS = "players",
     AUTHORS = "authors",
     COMMAND_BANS = "command_bans",
+    SILENCES = "silences",
     PATCH_NOTES_SCRAPER = "patch_notes_scraper",
     YOUTUBE_SCRAPER = "youtube_scraper",
 }

@@ -6,7 +6,7 @@ import { unauthorizedOops } from "../lib/util/error-responses"
 
 export const data = new SlashCommandBuilder()
     .setName("command_ban")
-    .setDescription("ban a user from using a certain command")
+    .setDescription("ban a user from using a certain command (ADMIN)")
     .addUserOption(option => option.setName("user").setDescription("the user to banhammer").setRequired(true))
     .addStringOption(option => option.setName("command_name").setDescription("if the command is /foo, type foo here").setRequired(true))
 
@@ -14,7 +14,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.options.getMember("user", true) as GuildMember
     const commandName = interaction.options.getString("command_name", true)
 
-    if (!isAdmin(interaction.member as GuildMember)) {
+    if (!(await isAdmin(interaction.member as GuildMember))) {
         return unauthorizedOops(interaction)
     } else if (!isCommand(commandName)) {
         return interaction.reply({ content: `No such command /${commandName}.`, ephemeral: true })

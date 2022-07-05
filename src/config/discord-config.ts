@@ -1,19 +1,26 @@
+import { GuildMember } from "discord.js"
 import _ from "underscore"
-import { getConfigsFromFirestore, getDebug, getDebugData, signIn } from "../lib/firestore"
+import { getConfigsFromFirestore, getDebugData, signIn } from "../lib/firestore"
+import { debugOn } from "../lib/trackers/debug-tracker"
 import { wait } from "../lib/util/async-utils"
 
-const VAL_ROLE_ID_NAME = "VAL_ROLE_ID"
+const discordConfig : Record<string, string> = {}
+const debugConfig : Record<string, string> = {}
 
-export const discordConfig : Record<string, string> = {}
+export function getConfig(member?: GuildMember) {
+    if (!member) return discordConfig
+    return debugOn(member) ? debugConfig : discordConfig
+}
 
 // Export this promise so other modules can block until the config is loaded
 export async function waitForDiscordConfig() {
-    while (Object.keys(discordConfig).length === 0) {
+    while (!loaded) {
         await wait()
     }
 }
 
 let signedIn = false
+let loaded = false
 
 export function signInAndLoadDiscordConfig() {
     if (signedIn) {
@@ -21,24 +28,19 @@ export function signInAndLoadDiscordConfig() {
         return
     }
 
-    signIn().then(() => {
+    signIn().then(async () => {
         signedIn = true
-        getConfigsFromFirestore().then(async configData => {
-            // Populate discord config
-            Object.keys(configData).forEach(key => discordConfig[key] = configData[key])
 
-            // Populate discord channels
+        // Populate discord config
+        const configData = await getConfigsFromFirestore()
+        Object.keys(configData).forEach(key => discordConfig[key] = configData[key])
 
-            const debugValue = await getDebug()
-            if (debugValue === true) {
-                console.log("Starting in debug mode...")
+        // Populate debug config
+        const debugData = await getDebugData()
+        Object.keys(discordConfig).forEach(key => debugConfig[key] = debugData[key] ? debugData[key] : discordConfig[key])
 
-                 // Change role ID to testing role
-                const debugData = await getDebugData()
-                discordConfig[VAL_ROLE_ID_NAME] = debugData[VAL_ROLE_ID_NAME]
-            }
+        console.log("Configs successfully loaded from Firestore.")
 
-            console.log("Discord configs successfully loaded from Firestore.")
-        })
+        loaded = true
     })
 }

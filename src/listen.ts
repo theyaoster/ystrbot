@@ -1,10 +1,10 @@
 import express from "express"
 import _ from "underscore"
 import { getPlayerStaticData, setPlayerStatus, getPlayerContract, setPlayerContract, setPlayerGameData } from "./lib/firestore"
-import { discordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
+import { getConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { GuildMember, Role } from "discord.js"
 import { Fields } from "./config/firestore-schema"
-import { guild, waitForDiscordElements } from "./lib/util/discord-utils"
+import { guild } from "./lib/util/discord-utils"
 import { wait } from "./lib/util/async-utils"
 
 const APP = express()
@@ -34,17 +34,17 @@ const STATUS_ROLE_MAP = new Map<RegExp, Role>()
 // Authenticate and load status roles
 let initialized = false
 signInAndLoadDiscordConfig() // This also initializes the Firestore connection
-waitForDiscordElements().then(async () => {
+waitForDiscordConfig().then(async () => {
     const GUILD = await guild()
 
     // Populate status roles
-    STATUS_ROLE_MAP.set(AFK_REGEX, (await GUILD.roles.fetch(discordConfig.AFK_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(LOBBY_REGEX, (await GUILD.roles.fetch(discordConfig.IN_LOBBY_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(AFK_REGEX, (await GUILD.roles.fetch(getConfig().AFK_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(LOBBY_REGEX, (await GUILD.roles.fetch(getConfig().IN_LOBBY_ROLE_ID))!)
     STATUS_ROLE_MAP.set(STARTUP_REGEX, STATUS_ROLE_MAP.get(LOBBY_REGEX)!)
-    STATUS_ROLE_MAP.set(QUEUE_REGEX, (await GUILD.roles.fetch(discordConfig.IN_QUEUE_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(PREGAME_REGEX, (await GUILD.roles.fetch(discordConfig.IN_PREGAME_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(RANGE_REGEX, (await GUILD.roles.fetch(discordConfig.IN_RANGE_ROLE_ID))!)
-    STATUS_ROLE_MAP.set(INGAME_REGEX, (await GUILD.roles.fetch(discordConfig.IN_GAME_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(QUEUE_REGEX, (await GUILD.roles.fetch(getConfig().IN_QUEUE_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(PREGAME_REGEX, (await GUILD.roles.fetch(getConfig().IN_PREGAME_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(RANGE_REGEX, (await GUILD.roles.fetch(getConfig().IN_RANGE_ROLE_ID))!)
+    STATUS_ROLE_MAP.set(INGAME_REGEX, (await GUILD.roles.fetch(getConfig().IN_GAME_ROLE_ID))!)
 
     initialized = true
 })

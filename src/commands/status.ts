@@ -11,9 +11,7 @@ export const data = new SlashCommandBuilder()
     .setDescription("see the in-game status of all registered players (offline players will be hidden)")
 
 export async function execute(interaction: CommandInteraction, __: Client) {
-    if (!commandFromTextChannel(interaction)) {
-        return
-    }
+    if (!commandFromTextChannel(interaction)) return
 
     getPlayerStatuses().then(statuses => {
         if (_.isEmpty(statuses)) {

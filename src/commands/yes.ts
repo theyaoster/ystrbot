@@ -9,12 +9,10 @@ export const data = new SlashCommandBuilder()
     .setDescription("say you're down to play (to the most recent /val that has pinged @fragl0rds)")
 
 export async function execute(interaction: CommandInteraction, _: Client) {
-    if (!commandFromTextChannel(interaction)) {
-        return
-    }
+    if (!commandFromTextChannel(interaction)) return
 
     const latest = getLatestPing()
-    const pingMessage = latest[0] as Message
+    const pingMessage = latest[0]
     if (!pingMessage) {
         return interaction.reply({ content: "I can't find the latest ping... maybe I was restarted recently?", ephemeral: true })
     }
@@ -26,7 +24,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     }
 
     const member = interaction.member as GuildMember
-    trackYes(pingMessage, member, await pingChannel())
+    trackYes(pingMessage as Message, member, await pingChannel(member))
 
     resolveInteraction(interaction)
 }
