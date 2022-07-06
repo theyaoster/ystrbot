@@ -10,8 +10,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction, _: Client) {
     if (!commandFromTextChannel(interaction)) return
 
-    const name = interaction.user.username
-    unregisterPlayer(name).then(_ => {
+    unregisterPlayer(interaction.user.username).then(_ => {
         interaction.reply({ content: `You've been unregistered. You can always register with /register again.`, ephemeral: true })
     }).catch(reason => {
         interaction.reply({ content: `Failed to unregister due to: ${reason}`, ephemeral: true })

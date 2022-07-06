@@ -69,7 +69,9 @@ export function resolveInteraction(interaction: CommandInteraction) {
 // Get the latest message (by a specific member, if provided) in a particular channel
 export function getLatestMessage(channel: TextChannel, member?: GuildMember) {
     if (member) {
-        channel.messages.cache.find(msg => msg.author.id === member.id)
+        const lastMsg = channel.messages.cache.find(msg => msg.author.id === member.id)
+        if (!lastMsg) console.log(`Failed to find last message by ${preferredName(member)} in ${channel.name}.`)
+        return lastMsg
     }
 
     return channel.messages.cache.get(channel.lastMessageId!)

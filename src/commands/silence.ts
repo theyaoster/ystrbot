@@ -27,7 +27,7 @@ export async function execute(interaction: CommandInteraction, __: Client) {
         return interaction.reply({ content: "Duration must be a number or expression.", ephemeral: true })
     }
 
-    const endDate =Date.now() + duration * 1000
+    const endDate = Date.now() + duration * 1000
     silence(member.user.username, endDate).then(succeeded => {
         interaction.reply({ content: succeeded ? `${member.user.username} is silenced until ${endDate}.` : `${member.user.username} is already silenced.`, ephemeral: true })
     }).catch(console.error)
