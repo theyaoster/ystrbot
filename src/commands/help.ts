@@ -25,8 +25,8 @@ export async function execute(interaction: CommandInteraction, __: Client) {
     if (await isAdmin(interaction.member as GuildMember)) groupNames.push(ADMIN_GROUP_NAME)
 
     let commandList = ""
-    for (const i of _.range(GROUP_NAMES.length)) {
-        commandList += `__${GROUP_NAMES[i]}:__\n`
+    for (const i of _.range(groupNames.length)) {
+        commandList += `__${groupNames[i]}:__\n`
 
         for (const commandData of GROUP_DEFINITONS[i]) {
             const description = commandData.name == data.name ? HELP_DESC_OVERRIDE : commandData.description

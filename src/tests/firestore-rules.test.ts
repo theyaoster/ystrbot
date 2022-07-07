@@ -23,6 +23,7 @@ const READ_AND_UPDATE_ONLY_PATHS = [
     `/${Collections.GAME_DATA}/${Documents.PLAYERS}`,
     `/${Collections.TICKETS}/${Documents.AUTHORS}`,
     `/${Collections.MEMBERS}/${Documents.COMMAND_BANS}`,
+    `/${Collections.MEMBERS}/${Documents.SILENCES}`,
     `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`,
 ]
 const UNCATEGORIZED_PATHS = [

@@ -59,8 +59,9 @@ async function _withHandling(methodDict: { [methodId: string]: (...args: any[]) 
 async function _getField(docRef: DocumentReference, field = DEFAULT_ROOT_KEY, defaultValue?: any) {
     const document = await getDoc(docRef)
 
-    if (_.isUndefined(document.get(field))) {
-        if (defaultValue) {
+    if (!document.get(field)) {
+        if (!_.isUndefined(defaultValue)) {
+            // This allows falsey values other than undefined to be default values
             return defaultValue
         }
 
@@ -246,8 +247,9 @@ async function registerPlayerH(name: string, id: string) {
 async function isSilencedH(username: string) {
     const docRef = doc(db, Collections.MEMBERS, Documents.SILENCES)
     const endDate = await _getField(docRef, username, null)
-    if (!endDate || endDate > Date.now()) {
-        updateDoc(docRef, stringMap([username], [deleteField()]))
+
+    if (!endDate || Date.now() >= endDate) {
+        if (endDate) updateDoc(docRef, stringMap([username], [deleteField()]))
         return false
     } else {
         return true
@@ -256,7 +258,7 @@ async function isSilencedH(username: string) {
 
 // Same as functions above, but with error handling
 export const getConfigsFromFirestore = () => _withHandling({ getConfigsFromFirestoreH }) // Load config in db
-export const getPlayerStaticData = () => _withHandling({ getPlayerStaticDataH: _getPlayerStaticDataH })
+export const getPlayerStaticData = () => _withHandling({ _getPlayerStaticDataH }) // Load player data that doesn't change
 export const getDebugData = () => _withHandling({ getDebugDataH }) // Load debug data
 export const getEndpoint = () => _withHandling({ getEndpointH }) // Retrieve web endpoint
 export const getTicketOverrides = () => _withHandling({ getTicketOverridesH }) // Load ticket overrides (when tickets go to different channels)
