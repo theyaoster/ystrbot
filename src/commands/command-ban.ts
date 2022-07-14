@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
-import { commandBan } from "../lib/firestore"
+import { commandBan } from "../lib/firestore/admin"
 import { isAdmin, isCommand } from "../lib/util/discord-utils"
 import { unauthorizedOops } from "../lib/util/error-responses"
 

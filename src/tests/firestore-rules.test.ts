@@ -26,8 +26,10 @@ const READ_AND_UPDATE_ONLY_PATHS = [
     `/${Collections.MEMBERS}/${Documents.SILENCES}`,
     `/${Collections.JOB_DATA}/${Documents.PATCH_NOTES_SCRAPER}`,
 ]
-const UNCATEGORIZED_PATHS = [
+const KEYS_IDENTICAL_PATHS = [
     `/${Collections.JOB_DATA}/${Documents.YOUTUBE_SCRAPER}`,
+    `/${Collections.TRACKING}/${Documents.AUDIO}`,
+    `/${Collections.TRACKING}/${Documents.PINGS}`,
 ]
 
 // Helper for initializing emulator data
@@ -44,6 +46,7 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
 
     const readOnlyDocs = READ_ONLY_PATHS.map(path => doc(db, path))
     const readUpdateOnlyDocs = READ_AND_UPDATE_ONLY_PATHS.map(path => doc(db, path))
+    const keysIdenticalFields = stringMap(KEYS_IDENTICAL_PATHS, [Fields.LAST_GAMING_ID, Fields.CURRENT_MESSAGE_ID, Fields.LATEST])
 
     for (const roDoc of readOnlyDocs) {
         await assertFails(setDoc(roDoc, NEW_DATA_PAYLOAD))
@@ -65,29 +68,25 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
         console.log(`Test for authenticated queries on read-update-only doc ${ruoDoc.id} passed.`)
     }
 
-    const jobDataDoc = doc(db, `/${Collections.JOB_DATA}/${Documents.YOUTUBE_SCRAPER}`)
-    await assertFails(setDoc(jobDataDoc, NEW_DATA_PAYLOAD, { merge: false }))
-    await assertFails(setDoc(jobDataDoc, NEW_DATA_PAYLOAD, { merge: true }))
-    await assertFails(updateDoc(jobDataDoc, NEW_DATA_PAYLOAD))
-    await assertSucceeds(updateDoc(jobDataDoc, stringMap([Fields.LAST_GAMING_ID], ["abcdefg"])))
-    await assertFails(deleteDoc(jobDataDoc))
-    await assertSucceeds(getDoc(jobDataDoc))
+    for (const kiPath of KEYS_IDENTICAL_PATHS) {
+        const kiDoc = doc(db, kiPath)
 
-    console.log(`Test for authenticated queries on doc ${jobDataDoc.id} passed.`)
+        await assertFails(setDoc(kiDoc, NEW_DATA_PAYLOAD, { merge: false }))
+        await assertFails(setDoc(kiDoc, NEW_DATA_PAYLOAD, { merge: true }))
+        await assertFails(updateDoc(kiDoc, NEW_DATA_PAYLOAD))
+        await assertSucceeds(updateDoc(kiDoc, stringMap([keysIdenticalFields[kiPath]], ["abcdefg"])))
+        await assertFails(deleteDoc(kiDoc))
+        await assertSucceeds(getDoc(kiDoc))
 
-    // Allow toggling debug
-    const adminDoc = doc(db, `/${Collections.CONFIG}/${Documents.ADMIN}`)
-    await assertSucceeds(updateDoc(adminDoc, stringMap([Fields.DEBUG], [true])))
-    await assertFails(updateDoc(adminDoc, stringMap([Fields.DEBUG, "test"], [false, "data"])))
-
-    console.log(`Test for toggling debug passed.`)
+        console.log(`Test for authenticated queries on read-update-only (identical keys) doc ${kiDoc.id} passed.`)
+    }
 }
 
 // Test unauthenticated queries
 async function performTestsForUnauthenticatedUser(context: RulesTestContext) {
     const db = context.firestore()
 
-    const allDocs = [...READ_ONLY_PATHS, ...READ_AND_UPDATE_ONLY_PATHS, ...UNCATEGORIZED_PATHS].map(path => doc(db, path))
+    const allDocs = [...READ_ONLY_PATHS, ...READ_AND_UPDATE_ONLY_PATHS, ...KEYS_IDENTICAL_PATHS].map(path => doc(db, path))
 
     for (const doc of allDocs) {
         await assertFails(setDoc(doc, NEW_DATA_PAYLOAD))

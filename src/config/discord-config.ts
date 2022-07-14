@@ -1,6 +1,7 @@
 import { GuildMember } from "discord.js"
 import _ from "underscore"
-import { getConfigsFromFirestore, getDebugData, signIn } from "../lib/firestore"
+import { signIn } from "../lib/firestore/common"
+import { getConfigsFromFirestore, getDebugData } from "../lib/firestore/configuration"
 import { debugOn } from "../lib/trackers/debug-tracker"
 import { wait } from "../lib/util/async-utils"
 
@@ -22,13 +23,13 @@ export async function waitForDiscordConfig() {
 let signedIn = false
 let loaded = false
 
-export function signInAndLoadDiscordConfig() {
+export async function signInAndLoadDiscordConfig() {
     if (signedIn) {
         console.error("Already signed in. Skipping...")
         return
     }
 
-    signIn().then(async () => {
+    await signIn().then(async () => {
         signedIn = true
 
         // Populate discord config

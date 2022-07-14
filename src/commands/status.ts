@@ -1,9 +1,10 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel, findEmoji, sendBotMessage } from "../lib/util/discord-utils"
-import { getPlayerStatuses } from "../lib/firestore"
+import { Client, CommandInteraction, GuildMember } from "discord.js"
 import _ from "underscore"
+import { commandFromTextChannel, findEmoji, sendBotMessage } from "../lib/util/discord-utils"
+import { getPlayerStatuses } from "../lib/firestore/game_data"
 
+const STATUS_MESSAGE_TIMEOUT = 15 //seconds
 const PADDING_CHARACTERS = 5
 
 export const data = new SlashCommandBuilder()
@@ -25,7 +26,7 @@ export async function execute(interaction: CommandInteraction, __: Client) {
             displayedContent += "```"
 
             // Show player statuses in the bot channel
-            sendBotMessage(displayedContent, interaction)
+            sendBotMessage(displayedContent, interaction.member as GuildMember, interaction, STATUS_MESSAGE_TIMEOUT)
         }
     }).catch(console.error)
 }

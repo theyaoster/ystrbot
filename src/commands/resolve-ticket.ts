@@ -1,7 +1,8 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, ThreadChannel } from "discord.js"
 import { getConfig } from "../config/discord-config"
-import { getTicketOverrides, isTicketAuthor, removeTicket } from "../lib/firestore"
+import { isTicketAuthor, removeTicket } from "../lib/firestore/admin"
+import { getTicketOverrides } from "../lib/firestore/configuration"
 import { commandFromTextChannelThread, isAdmin } from "../lib/util/discord-utils"
 import { unauthorizedOops } from "../lib/util/error-responses"
 

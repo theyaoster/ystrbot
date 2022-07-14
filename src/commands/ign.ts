@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
-import { getPlayerIgn } from "../lib/firestore"
-import { sleepMinutes } from "../lib/util/async-utils"
+import { getPlayerIgn } from "../lib/firestore/game_data"
+import { sleepSeconds } from "../lib/util/async-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("ign")
-    .setDescription("show your IGN (or that of another registered user) for 60s")
+    .setDescription("show your IGN (or that of another registered user) for 30s")
     .addUserOption(option => option.setName("player").setDescription("A registered user.").setRequired(false))
 
 export async function execute(interaction: CommandInteraction, _: Client) {
@@ -13,9 +13,9 @@ export async function execute(interaction: CommandInteraction, _: Client) {
 
     getPlayerIgn(user.username).then(async ign => {
         if (ign) {
-            interaction.reply(`${ign} (will delete in 1m)`)
+            interaction.reply(`${ign} (will self-delete)`)
 
-            await sleepMinutes(1)
+            await sleepSeconds(30)
 
             interaction.deleteReply()
         } else {
@@ -24,10 +24,6 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     }).catch(reason => {
         console.error(`Failed to fetch IGN: ${reason.stack}`)
 
-        interaction.reply({
-            content: `User is not registered - could not fetch IGN.`,
-            ephemeral: true
-        })
+        interaction.reply({ content: `User is not registered - could not fetch IGN.`, ephemeral: true })
     })
-
 }

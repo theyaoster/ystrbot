@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
 import _ from "underscore"
-import { isSilenced, silence } from "../lib/firestore"
+import { isSilenced, silence } from "../lib/firestore/admin"
 import { evalArithmetic } from "../lib/util/data-structure-utils"
 import { commandFromTextChannel, isAdmin, isBot } from "../lib/util/discord-utils"
 import { unauthorizedOops } from "../lib/util/error-responses"

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
-import { createAudioRequest, idle, processAudioQueue } from "../lib/trackers/audio-tracker"
-import { resolveInteraction, sendBotMessage } from "../lib/util/discord-utils"
+import { createAudioRequest, playerIdle, processAudioQueue } from "../lib/trackers/audio-tracker"
+import { resolveInteraction } from "../lib/util/discord-utils"
 
 const VALID_URL_REGEX = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/
 
@@ -16,7 +16,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.member as GuildMember
     const url = interaction.options.getString("url", true)
     const channelOption = interaction.options.getChannel("channel")
-    const duration = interaction.options.getInteger("duration")
+    const duration = interaction.options.getInteger("duration") || undefined
 
     // Validate inputs
     if (!VALID_URL_REGEX.test(url)) {
@@ -30,18 +30,18 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     // Enqueue this request
     const channelToJoin = channelOption ? channelOption : member.voice.channel!
     try {
-        createAudioRequest(member, url, channelToJoin, duration)
+        await createAudioRequest(member.id, url, channelToJoin.id, duration)
         resolveInteraction(interaction)
-    } catch (error) {
+    } catch (error: any) {
+        console.error(`Error in /play while queuing request: ${error.stack}`)
+
         interaction.reply({ content: `Failed to queue that: ${error}`, ephemeral: true })
     }
 
     // Play audio
-    if (idle()) {
+    if (playerIdle()) {
         console.log("Processing audio queue now...")
 
-        processAudioQueue().then(() => {
-            sendBotMessage("_Queue completed._")
-        })
+        processAudioQueue()
     }
 }

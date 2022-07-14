@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client } from "discord.js"
 import { findBestMatch } from "string-similarity"
 import _ from "underscore"
-import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore"
+import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore/game_data"
 import { sleepSeconds } from "../lib/util/async-utils"
 import { fetchAgents } from "../lib/valorant-content"
 

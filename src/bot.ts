@@ -3,10 +3,13 @@ import config from "./config/config"
 import * as commandModules from "./commands"
 import * as helpCommand from "./commands/help"
 import * as messageActionModules from "./message-actions"
-import { waitForDiscordConfig, signInAndLoadDiscordConfig } from "./config/discord-config"
-import { isCommandBanned, isSilenced } from "./lib/firestore"
+import { waitForDiscordConfig, signInAndLoadDiscordConfig, getConfig } from "./config/discord-config"
 import { unauthorizedOops } from "./lib/util/error-responses"
 import startJobs from "./jobs"
+import { getCurrentRequest, updateSkipVotesNeeded } from "./lib/firestore/audio_requests"
+import { isCommandBanned, isSilenced } from "./lib/firestore/admin"
+import _ from "underscore"
+import { playerIdle, processAudioQueue } from "./lib/trackers/audio-tracker"
 
 function initializeBot() {
     const commands = Object(commandModules)
@@ -47,9 +50,19 @@ function initializeBot() {
         }
     })
 
+    client.on("voiceStateUpdate", async (oldState, newState) => {
+        if (!playerIdle() && (_.isNull(oldState.channelId) || _.isNull(newState.channelId)) && ![oldState.member?.id, newState.member?.id].includes(getConfig().CLIENT_ID)) {
+            // If a user enters or leaves a voice channel and the audio player isn't idle
+            const current = await getCurrentRequest()
+            if (newState.channelId === current.channelId) {
+                updateSkipVotesNeeded(newState.channel!.members.size)
+            }
+        }
+    })
+
     // Make sure we log errors
-    client.on("error", error => console.error(`Discord client error: ${error.stack}`))
-    client.on("unhandledRejection", error => console.error(`Unhandled rejection error: ${error.stack}`))
+    client.on("error", error => console.error(`Discord client error: ${error}`))
+    client.on("unhandledRejection", error => console.error(`Unhandled rejection error (client): ${error}`))
 
     // ***** DISCORD EVENT HANDLING ENDS ***** //
 
@@ -57,13 +70,20 @@ function initializeBot() {
 }
 
 async function main() {
+    // Log rejected promises
+    process.on("unhandledRejection", (error: any) => {
+        console.error(`Unhandled rejection error (process): ${error} ${error.stack}`)
+
+        throw error
+    });
+
     // This also initializes the Firestore connection
     signInAndLoadDiscordConfig()
 
-    // Only initialize bot (discord client) after config is loaded
-    waitForDiscordConfig().then(() => {
-        initializeBot()
+    waitForDiscordConfig().then(async () => {
+        initializeBot() // Create client that listens to commands and other events
         startJobs() // Start cron jobs
+        processAudioQueue() // Process audio queue, in case we just restarted
     }).catch(reason => console.error(`Error occurred while waiting for discord config to load: ${reason}`))
 }
 

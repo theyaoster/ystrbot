@@ -1,4 +1,4 @@
-import { CommandInteraction, Client, GuildMember, TextChannel, Message, Guild } from "discord.js"
+import { CommandInteraction, Client, GuildMember, TextChannel, Message, Guild, Snowflake } from "discord.js"
 import _ from "underscore"
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses"
 import { getConfig, waitForDiscordConfig } from "../../config/discord-config"
@@ -11,6 +11,7 @@ const client = new Client({
         "GUILDS",
         "GUILD_MEMBERS",
         "GUILD_MESSAGES",
+        "GUILD_VOICE_STATES",
     ]
 })
 
@@ -21,17 +22,19 @@ let GUILD : Guild | undefined
 let BOT_MEMBER : GuildMember | undefined
 
 // Getters for basic discord elements
-export async function self() { await waitForDiscordConfig(); return BOT_MEMBER ??= (await guild()).members.cache.get(getConfig().CLIENT_ID)! }
-export async function guild() { await waitForDiscordConfig(); return GUILD ??= client.guilds.cache.get(getConfig().GUILD_ID)! }
+export async function self() { await waitForDiscordConfig(); return BOT_MEMBER ??= await (await guild()).members.fetch(getConfig().CLIENT_ID) }
+export async function guild() { await waitForDiscordConfig(); return GUILD ??= await client.guilds.fetch(getConfig().GUILD_ID) }
+export async function member(id: Snowflake) { return (await guild()).members.cache.get(id)! }
+export async function channel(id: Snowflake) { return (await guild()).channels.cache.get(id)! }
+export async function message(channel: TextChannel, id: Snowflake) { await waitForDiscordConfig(); return channel.messages.cache.get(id)! }
 export async function botChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).BOT_TEXT_CHANNEL_ID) as TextChannel }
 export async function patchNotesChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).PATCH_NOTES_CHANNEL_ID) as TextChannel }
 export async function pingChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).VAL_PING_CHANNEL_ID) as TextChannel }
 export async function videoChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).VIDEO_CHANNEL_ID) as TextChannel }
 export async function feedbackChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).FEEDBACK_CHANNEL_ID) as TextChannel }
-export async function valRole(member?: GuildMember) { await waitForDiscordConfig(); return (await guild()).roles.cache.get(getConfig(member).VAL_ROLE_ID)! }
-export async function adminRole(member?: GuildMember) { await waitForDiscordConfig(); return (await guild()).roles.cache.get(getConfig(member).ADMIN_ROLE_ID)! }
-export async function botRole(member?: GuildMember) { await waitForDiscordConfig(); return (await guild()).roles.cache.get(getConfig(member).BOTS_ROLE_ID)! }
-
+export async function valRole(member?: GuildMember) { return (await guild()).roles.cache.get(getConfig(member).VAL_ROLE_ID)! }
+export async function adminRole(member?: GuildMember) { return (await guild()).roles.cache.get(getConfig(member).ADMIN_ROLE_ID)! }
+export async function botRole(member?: GuildMember) { return (await guild()).roles.cache.get(getConfig(member).BOTS_ROLE_ID)! }
 
 // Whether the member has admin permissions
 export async function isAdmin(member: GuildMember | null) {
@@ -121,33 +124,24 @@ export async function countdown(start: number, timeUnitInMillis: number, textCha
     message?.delete()
 }
 
-// Get the channel that the bot sends updates to
-export async function sendBotMessage(message: string, interaction?: CommandInteraction, timeoutSeconds?: number) {
-    const channel = await botChannel()
+// Send message in the bot-dedicated channel
+export async function sendBotMessage(message: string, member?: GuildMember, interaction?: CommandInteraction, timeoutSeconds?: number) {
+    const channel = await botChannel(member)
+
+    // Handle interaction if provided
+    if (interaction) {
+        if (interaction.channelId !== channel.id) {
+            interaction.reply({ content: `See ${channel} for output.`, ephemeral: true })
+        } else {
+            resolveInteraction(interaction)
+        }
+    }
 
     // Send message
-    let promise
-    if (interaction) {
-        if (interaction.channelId == channel.id) {
-            promise = interaction.reply(message)
-        } else {
-            interaction.reply({ content: `See ${channel} for output.`, ephemeral: true })
-            promise = channel.send(message)
-        }
-    } else {
-        promise = channel.send(message)
-    }
+    const sentMessage = await channel.send(message)
 
     // Delete the message if a timeout is specified
-    if (timeoutSeconds) {
-        promise.then(async output => {
-            await sleepSeconds(timeoutSeconds)
+    if (timeoutSeconds) sleepSeconds(timeoutSeconds).then(() => sentMessage.delete())
 
-            if (output instanceof Message) {
-                output.delete()
-            } else {
-                interaction?.deleteReply()
-            }
-        })
-    }
+    return sentMessage
 }

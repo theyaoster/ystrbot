@@ -1,8 +1,9 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction } from "discord.js"
 import { commandFromTextChannel } from "../lib/util/discord-utils"
-import { getEndpoint, registerPlayer } from "../lib/firestore"
 import { getLatestExeLink } from "../lib/repo-info"
+import { getEndpoint } from "../lib/firestore/configuration"
+import { registerPlayer } from "../lib/firestore/game_data"
 
 export const data = new SlashCommandBuilder()
     .setName("register")

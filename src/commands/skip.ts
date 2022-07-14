@@ -1,7 +1,8 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
-import { audioTracker, generateBotPlayingMessage, idle, skip, voteSkip } from "../lib/trackers/audio-tracker"
-import { isAdmin } from "../lib/util/discord-utils"
+import { getCurrentMessage, getCurrentRequest } from "../lib/firestore/audio_requests"
+import { generateBotPlayingMessage, playerIdle, skipRequest, voteSkip } from "../lib/trackers/audio-tracker"
+import { isAdmin, resolveInteraction } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("skip")
@@ -10,37 +11,34 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction, _: Client) {
     const member = interaction.member as GuildMember
 
-    if (!idle()) {
-        const current = audioTracker.current!
-        if ((await isAdmin(member)) || member.id == current?.requester.id) {
-            skip()
+    if (playerIdle()) {
+        interaction.reply({ content: "Player is idle - nothing to skip.", ephemeral: true })
+    } else {
+        // Make sure caller is in the proper voice state
+        const current = await getCurrentRequest()
+        if (!member.voice.channelId || current.channelId !== member.voice.channelId) {
+            return interaction.reply({ content: "You need to be in the voice channel where the audio is playing.", ephemeral: true })
+        }
 
-            interaction.reply({ content: `Skipping "${current?.title}".`, ephemeral: true })
+        // Check if the caller is authorized to skip
+        const currentMessage = await getCurrentMessage(member)
+        if ((await isAdmin(member)) || member.id === current.requesterId) {
+            skipRequest()
+
+            interaction.reply({ content: `Skipping "${current.title}".`, ephemeral: true })
 
             // Update bot message
-            audioTracker.currentMessage?.edit(`~~${audioTracker.currentMessage.content}~~ SKIPPED`)
+            currentMessage.edit(`~~${currentMessage.content}~~ SKIPPED`)
         } else {
             // When someone tries to skip someone else's request
-            if (voteSkip(member)) {
-                const voteCount = current.skipVotes.size
-                const votesNeeded = audioTracker.skipVotesNeeded
-
-                // Check if the required number of votes has been reached
-                if (voteCount >= votesNeeded) {
-                    skip()
-
-                    interaction.reply({ content: `Reached needed number of skip votes (${votesNeeded}) - skipping "${current?.title}".`, ephemeral: true })
-                } else {
-                    interaction.reply({ content: `Voted to skip "${current?.title}".`, ephemeral: true })
-                }
+            if (await voteSkip(member)) {
+                resolveInteraction(interaction)
 
                 // Update bot message to reflect vote
-                audioTracker.currentMessage?.edit(generateBotPlayingMessage())
+                currentMessage.edit(await generateBotPlayingMessage())
             } else {
-                interaction.reply({ content: "You already submitted a vote for this request.", ephemeral: true })
+                interaction.reply({ content: "You already voted to skip this request.", ephemeral: true })
             }
         }
-    } else {
-        interaction.reply({ content: "Queue is empty - nothing to skip.", ephemeral: true })
     }
 }

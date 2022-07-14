@@ -2,7 +2,7 @@ import { Client, GuildEmoji, Message } from "discord.js"
 import _ from "underscore"
 import { nameToEmoji, withoutEmojis } from "../lib/util/data-structure-utils"
 import { guild, isBot } from "../lib/util/discord-utils"
-import { getKeywordSubstitutions, getKeywordEmojiLists } from "../lib/firestore"
+import { getKeywordSubstitutions, getKeywordEmojiLists } from "../lib/firestore/configuration"
 
 export async function execute(message: Message, __: Client) {
     const content = withoutEmojis(message.content.toLowerCase())

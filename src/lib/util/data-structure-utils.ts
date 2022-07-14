@@ -6,6 +6,11 @@ import * as dismoji from "discord-emoji"
 const EMOJI_NAMES = Object.assign({}, ...Object.values(dismoji))
 const CAPTURE_EMOJIS_REGEX = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/gi
 
+// Iterate an array in reverse
+export function forEachReverse(array: any[], fn: (element: any) => void) {
+    return array.reduceRight((_, element) => fn(element), null)
+}
+
 // Filters custom emojis out of a string
 export function withoutEmojis(message: string) {
     return message.replaceAll(CAPTURE_EMOJIS_REGEX, "")

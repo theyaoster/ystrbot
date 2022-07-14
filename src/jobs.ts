@@ -3,9 +3,9 @@ import puppeteer from "puppeteer"
 import ytdl from "ytdl-core"
 import { load } from "cheerio"
 import _ from "underscore"
-import { getLatestVideoId, getMostRecentPath, getYoutubeChannelId, setLatestVideoId, setMostRecentPath } from "./lib/firestore"
 import { patchNotesChannel, self, videoChannel } from "./lib/util/discord-utils"
 import { Fields } from "./config/firestore-schema"
+import { getYoutubeChannelId, getMostRecentPath, setMostRecentPath, getLatestVideoId, setLatestVideoId } from "./lib/firestore/job_data"
 
 const VALORANT_BASE_URL = "https://playvalorant.com"
 const GAME_UPDATES_URL = VALORANT_BASE_URL + "/en-us/news/game-updates/"
@@ -15,6 +15,7 @@ const VERSION_CAPTURE_REGEX = /^[a-z-\/]+valorant-patch-notes-([0-9-]+)\/$/
 
 const YOUTUBE_BASE_URL = "https://www.youtube.com"
 const YOUTUBE_CHANNEL_URL_BUILDER = (channelId: string) => `${YOUTUBE_BASE_URL}/channel/${channelId}/videos`
+const YOUTUBE_VIDEO_LINK_BUILDER = (videoId: string) => `https://youtu.be/${videoId}`
 const VIDEO_TITLE_LINK_FILTER = "a[id=\"video-title\"][href*=\"watch\"]"
 const VALORANT_TITLE_REGEX = /((?:map|agent|skin).+(?:reveal|trailer))|(episode.+cinematic)/i
 
@@ -23,6 +24,7 @@ const VALORANT_TITLE_REGEX = /((?:map|agent|skin).+(?:reveal|trailer))|(episode.
 async function getPageContent(url: string, waitCondition: (page: puppeteer.Page) => any) {
     const browser = await puppeteer.launch({ args: ['--no-sandbox'] })
     const page = await browser.newPage()
+    await page.setCacheEnabled(false) // Just in case, disable caching
     await page.goto(url)
 
     // Wait for some condition - to avoid reading the page content before certain elements have loaded
@@ -55,9 +57,9 @@ async function checkForNewYoutubeVideo(channelIdField: string, getLastVideo: () 
             const channelName = latestVideo.videoDetails.author.name
             const latestVideoId = latestVideo.videoDetails.videoId
             if (latestVideoId !== await getLastVideo()) {
-                const newLink = `${YOUTUBE_BASE_URL}/watch?v=${latestVideoId}`
+                const newLink = YOUTUBE_VIDEO_LINK_BUILDER(latestVideoId)
 
-                console.log(`Detected new video on ${channelName} (${latestVideo.videoDetails.title}), sending link ${newLink}`)
+                console.log(`Detected new video by ${channelName} (${latestVideo.videoDetails.title}), sending link ${newLink}`)
 
                 setLastVideo(latestVideoId)
                 const channel = await videoChannel(await self())
@@ -110,14 +112,14 @@ const patchNotesUpdater = new CronJob("0 * * * *", () => {
 })
 
 // Check for new Youtube videos from gaming channel
-const gamingYoutubeUpdater = new CronJob("5-59/10 * * * *", () => checkForNewYoutubeVideo(
+const gamingYoutubeUpdater = new CronJob("8-59/10 * * * *", () => checkForNewYoutubeVideo(
     Fields.GAMING_CHANNEL_ID,
     () => getLatestVideoId(Fields.LAST_GAMING_ID),
     newValue => setLatestVideoId(Fields.LAST_GAMING_ID, newValue)
 ))
 
 // Check for new agent/map reveals or cinematics from the official VALORANT channel
-const valorantYoutubeUpdater = new CronJob("*/10 * * * *", () => checkForNewYoutubeVideo(
+const valorantYoutubeUpdater = new CronJob("3-59/10 * * * *", () => checkForNewYoutubeVideo(
     Fields.VALORANT_CHANNEL_ID,
     () => getLatestVideoId(Fields.LAST_VALORANT_ID),
     newValue => setLatestVideoId(Fields.LAST_VALORANT_ID, newValue),

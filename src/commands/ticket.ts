@@ -1,8 +1,9 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js"
 import { commandFromTextChannel } from "../lib/util/discord-utils"
-import { getTicketOverrides, trackTicket } from "../lib/firestore"
 import { getConfig } from "../config/discord-config"
+import { trackTicket } from "../lib/firestore/admin"
+import { getTicketOverrides } from "../lib/firestore/configuration"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
