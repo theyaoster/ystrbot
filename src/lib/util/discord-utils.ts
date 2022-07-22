@@ -64,8 +64,8 @@ export function isCommand(commandName: string) {
 }
 
 // Resolves a command interaction without a reply... nice and hacky!
-export function resolveInteraction(interaction: CommandInteraction) {
-    interaction.deferReply()
+export async function resolveInteraction(interaction: CommandInteraction) {
+    await interaction.deferReply()
     interaction.deleteReply()
 }
 
