@@ -1,5 +1,5 @@
 import { getAuth, signInWithEmailAndPassword } from "@firebase/auth"
-import { deleteField, doc, DocumentReference, getDoc, updateDoc } from "firebase/firestore"
+import { arrayRemove, arrayUnion, deleteField, doc, DocumentReference, getDoc, updateDoc } from "firebase/firestore"
 import _ from "underscore"
 import { createHash } from "crypto"
 import config from "../../config/config"
@@ -43,17 +43,14 @@ export async function setField<T>(docRef: DocumentReference, fieldPath: string, 
 
 // Helper for deleting a single field in a doc
 export async function removeField(docRef: DocumentReference, fieldPath: string) {
-    updateDoc(docRef, stringMap([fieldPath], [deleteField()]))
+    await updateDoc(docRef, stringMap([fieldPath], [deleteField()]))
 }
 
 // Helper function for retrieving a single player string field
 export async function getPlayerField(name: string, field: string, token?: string) {
     const playerData = token ? await authenticate(name, token) : await getField(doc(db, Collections.GAME_DATA, Documents.PLAYERS), name)
 
-    if (!(field in playerData)) {
-        throw new Error(`${field} is not a field in ${name}`)
-    }
-
+    if (!(field in playerData)) throw new Error(`${field} is not a field in ${name}`)
     return playerData[field]
 }
 
@@ -72,53 +69,51 @@ export async function setPlayerFields(name: string, fieldMap: { [field: string] 
     return updateDoc(doc(db, Collections.GAME_DATA, Documents.PLAYERS), newData)
 }
 
+// Helper for running Array#find on an array field in Firestore
+export async function arrayFieldFetch<T>(docRef: DocumentReference, fieldPath: string, predicate: (element: T) => boolean, strict = false) {
+    const currentArray = await getField<T[]>(docRef, fieldPath, [])
+    const element = currentArray.find(predicate)
+    if (strict && !element) throw Error(`No matching element found in ${JSON.stringify(currentArray)} at ${docRef.path}/${fieldPath}`)
+    return element
+}
+
 // Helper for pushing values to an array field - returns whether the values were successfully pushed
 export async function arrayFieldPush<T>(docRef: DocumentReference, fieldPath: string, checkForDuplicates = false, ...values: T[]) {
-    const currentArray = await getField(docRef, fieldPath, []) as T[]
+    const currentArray = await getField<T[]>(docRef, fieldPath, [])
 
     if (checkForDuplicates) {
         const duplicates = values.filter(value => currentArray.includes(value))
-        if (!_.isEmpty(duplicates)) {
+        if (_.isEmpty(duplicates)) {
+            // No duplicates - safe to union
+            updateDoc(docRef, stringMap([fieldPath], [arrayUnion(values)]))
+            return true
+        } else {
             console.error(`Could not push values - duplicates found: ${duplicates}`)
 
             return false
         }
+    } else {
+        // Just append everything
+        currentArray.push(...values)
+        updateDoc(docRef, stringMap([fieldPath], [currentArray]))
+        return true
     }
-
-    currentArray.push(...values)
-
-    updateDoc(docRef, stringMap([fieldPath], [currentArray]))
-    return true
 }
 
-// Remove specified values from an array field - returns whether the values were successfully removed
-export async function arrayFieldRemove<T>(docRef: DocumentReference, fieldPath: string, ...values: T[]) {
-    const currentData = await getField(docRef, fieldPath)
-    const currentArray = currentData as T[]
-
-    for (const value of values) {
-        const index = currentArray.indexOf(value)
-        if (index < 0) {
-            console.error(`Value '${value}' does not exist in the array at ${docRef.path}/${fieldPath}!`)
-            return false
-        } else {
-            currentArray.splice(index, 1)
-        }
-    }
-
-    updateDoc(docRef, stringMap([fieldPath], [currentArray]))
-    return true
+// Remove specified values from an array field (though they may not be present to begin with)
+export async function arrayFieldRemove(docRef: DocumentReference, fieldPath: string, ...values: any[]) {
+    await updateDoc(docRef, stringMap([fieldPath], [arrayRemove(...values)]))
 }
 
 // Remove values at specified indices from an array field - returns whether the values were successfully removed
 export async function arrayFieldRemoveByIndices<T>(docRef: DocumentReference, fieldPath: string, ...indices: number[]) {
-    const currentData = await getField(docRef, fieldPath)
-    const currentArray = currentData as T[]
+    const currentArray = await getField<T[]>(docRef, fieldPath)
     forEachReverse(indices, index => {
         if (index < 0 || index >= currentArray.length) {
             console.error(`Index '${index}' out of range at ${docRef.path}/${fieldPath}!`)
             return false
         }
+
         currentArray.splice(index, 1)
     })
 
@@ -126,13 +121,35 @@ export async function arrayFieldRemoveByIndices<T>(docRef: DocumentReference, fi
     return true
 }
 
+// Remove all values in an array field satisfying a condition
+export async function arrayFieldRemoveByCondition<T>(docRef: DocumentReference, fieldPath: string, condition: (element: T) => boolean) {
+    const currentArray = await getField<T[]>(docRef, fieldPath)
+    await arrayFieldRemove(docRef, fieldPath, ...currentArray.filter(condition))
+}
+
 // Pop the first element of an array field
 export async function arrayFieldPop<T>(docRef: DocumentReference, fieldPath: string) {
-    const currentData = await getField(docRef, fieldPath)
+    const currentData = await getField<T[]>(docRef, fieldPath)
 
-    const popped = (currentData as T[])[0]
+    const popped = currentData[0]
     arrayFieldRemoveByIndices<T>(docRef, fieldPath, 0)
     return popped
+}
+
+// Modify elements of an array satisfying the filter with the updated data (only useful for arrays of objects)
+export async function arrayFieldModify<T>(docRef: DocumentReference, fieldPath: string, update: (element: T) => void, filter: (element: T) => boolean) {
+    const currentArray = await getField<T[]>(docRef, fieldPath)
+
+    for (const element of currentArray) {
+        if (filter(element)) update(element)
+    }
+
+    await updateDoc(docRef, stringMap([fieldPath], [currentArray]))
+}
+
+// Check if an array field contains a value
+export async function arrayFieldContains<T>(docRef: DocumentReference, fieldPath: string, value: T) {
+    return (await getField<T[]>(docRef, fieldPath)).includes(value)
 }
 
 // Authenticate registered player against secret

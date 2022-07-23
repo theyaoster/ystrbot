@@ -11,7 +11,8 @@ const LOCAL_ENV_VARIABLE_NAMES = [
     "FIRESTORE_APP_ID",
     "FIRESTORE_MEASUREMENT_ID",
     "FIREBASE_EMAIL",
-    "FIREBASE_SECRET"
+    "FIREBASE_SECRET",
+    "DEBUGGERS",
 ]
 
 // Attempt to load variables from local .env
@@ -21,15 +22,15 @@ const configVariables = process.env
 if (loadLocalConfigResult.error) {
     console.log(`No .env file found - will assume environment variables are already present.`)
 } else {
-    console.log(`Found .env file.`)
+    console.log(`Loaded configs from .env.`)
 }
 
 const config: Record<string, string> = {}
 LOCAL_ENV_VARIABLE_NAMES.forEach(varName => {
-    if (!configVariables[varName]) {
-        throw new Error(`Missing required env variable ${varName}!`)
-    } else {
+    if (configVariables[varName]) {
         config[varName] = configVariables[varName]!
+    } else {
+        console.debug(`No value provided for environment variable ${varName}.`)
     }
 })
 

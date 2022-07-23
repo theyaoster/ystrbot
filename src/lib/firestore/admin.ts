@@ -13,7 +13,7 @@ export const isTicketAuthor = async (caller: GuildMember, ticketThreadId: Snowfl
 export const removeTicket = async (ticketThreadId: string) => await removeField(authorsDocRef, ticketThreadId)
 
 export const commandBan = async (username: string, commandName: string) => await arrayFieldPush<string>(commandBansDocRef, username, true, commandName)
-export const commandUnban = async (username: string, commandName: string) => await arrayFieldRemove<string>(commandBansDocRef, username, commandName)
+export const commandUnban = async (username: string, commandName: string) => await arrayFieldRemove(commandBansDocRef, username, true, commandName)
 export const isCommandBanned = async (username: string, commandName: string) => (await getField<string[]>(commandBansDocRef, username, [])).includes(commandName)
 export const silence = async (username: string, endDate: number) => await setField<Object>(silencesDocRef, username, endDate, false)
 

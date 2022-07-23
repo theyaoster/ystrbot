@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
 import _ from "underscore"
 import { getCurrentRequest, getQueue } from "../lib/firestore/audio_requests"
-import { playerIdle, requestToString } from "../lib/trackers/audio-tracker"
+import { playerIdle, requestToString } from "../lib/util/audio-request-utils"
 import { sendBotMessage } from "../lib/util/discord-utils"
 
 const QUEUE_MESSAGE_TIMEOUT = 15 //seconds

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
 import { unauthorizedOops } from "../lib/util/error-responses"
-import { commandFromTextChannel, isAdmin, preferredName } from "../lib/util/discord-utils"
+import { commandFromTextChannel, isAdmin } from "../lib/util/discord-utils"
 import { debugOn, toggleDebug } from "../lib/trackers/debug-tracker"
 
 export const data = new SlashCommandBuilder()
@@ -15,10 +15,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
 
     const memberParam = interaction.options.getMember("member")
     const member = memberParam ? memberParam as GuildMember : interaction.member as GuildMember
-    toggleDebug(member)
+    toggleDebug(member.id)
 
-    const message = `Debug mode is now ${debugOn(member) ? "on" : "off"}.`
-    interaction.reply({ content: message, ephemeral: true })
-
-    console.info(message + ` (for ${preferredName(member)})`)
+    interaction.reply({ content: `Debug mode is now ${debugOn(member.id) ? "on" : "off"}.`, ephemeral: true })
 }

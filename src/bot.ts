@@ -1,3 +1,4 @@
+import _ from "underscore"
 import { Client } from "discord.js"
 import config from "./config/config"
 import * as commandModules from "./commands"
@@ -8,8 +9,8 @@ import { unauthorizedOops } from "./lib/util/error-responses"
 import startJobs from "./jobs"
 import { getCurrentRequest, updateSkipVotesNeeded } from "./lib/firestore/audio_requests"
 import { isCommandBanned, isSilenced } from "./lib/firestore/admin"
-import _ from "underscore"
-import { playerIdle, processAudioQueue } from "./lib/trackers/audio-tracker"
+import { playerIdle, processAudioQueue } from "./lib/util/audio-request-utils"
+import { toggleDebug } from "./lib/trackers/debug-tracker"
 
 function initializeBot() {
     const commands = Object(commandModules)
@@ -28,7 +29,11 @@ function initializeBot() {
 
     // ***** DISCORD EVENT HANDLING STARTS ***** //
 
-    client.once("ready", () => console.log("Ready to rumble."))
+    client.once("ready", () => {
+        if (config.DEBUGGERS) config.DEBUGGERS.split(",").forEach(toggleDebug)
+
+        console.log("Ready to rumble.")
+    })
 
     client.on("interactionCreate", async interaction => {
         if (interaction.isCommand()) {

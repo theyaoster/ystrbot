@@ -13,7 +13,7 @@ export const MOCK_DATA = stringMap(Object.values(Collections).sort(), [
     stringMap([Documents.COMMAND_BANS, Documents.SILENCES], [{ "johndoe": "val" }, { "johndoe": 84902380423 }]),
     stringMap([Documents.AUTHORS], [{ "12345678910": "23478923243" }]),
     stringMap([Documents.PINGS, Documents.AUDIO], [
-        stringMap([Fields.BANS, Fields.LATEST, Fields.PENDING, Fields.FIRED_HISTORY], [[{ requesterId: "abc" }], { requesterId: "def" }, [{ requesterId: "ghi" }], [{ requesterId: "jkl" }]]),
+        stringMap([Fields.ACTIVE], [[{ requesterId: "abc" }, { requesterId: "def" }, { requesterId: "ghi" }]]),
         stringMap([Fields.QUEUE, Fields.CURRENT_REQUEST, Fields.CURRENT_MESSAGE_ID, Fields.SKIP_VOTES_NEEDED], [[{ requesterId: "234324" }, { requesterId: "23443534" }], { requesterId: "378490238432" }, "3475893454", 4])
     ])
 ])

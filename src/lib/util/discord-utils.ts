@@ -24,9 +24,9 @@ let BOT_MEMBER : GuildMember | undefined
 // Getters for basic discord elements
 export async function self() { await waitForDiscordConfig(); return BOT_MEMBER ??= await (await guild()).members.fetch(getConfig().CLIENT_ID) }
 export async function guild() { await waitForDiscordConfig(); return GUILD ??= await client.guilds.fetch(getConfig().GUILD_ID) }
-export async function member(id: Snowflake) { return (await guild()).members.cache.get(id)! }
+export async function member(id: Snowflake) { return (await guild()).members.fetch(id) }
 export async function channel(id: Snowflake) { return (await guild()).channels.cache.get(id)! }
-export async function message(channel: TextChannel, id: Snowflake) { await waitForDiscordConfig(); return channel.messages.cache.get(id)! }
+export async function message(channel: TextChannel, id: Snowflake) { await waitForDiscordConfig(); return await channel.messages.fetch(id) }
 export async function botChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).BOT_TEXT_CHANNEL_ID) as TextChannel }
 export async function patchNotesChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).PATCH_NOTES_CHANNEL_ID) as TextChannel }
 export async function pingChannel(member?: GuildMember) { await waitForDiscordConfig(); return client.channels.cache.get(getConfig(member).VAL_PING_CHANNEL_ID) as TextChannel }

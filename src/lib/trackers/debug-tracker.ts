@@ -1,13 +1,15 @@
-import { GuildMember, Snowflake } from "discord.js"
+import { Snowflake } from "discord.js"
 
 const debuggers = new Set<Snowflake>()
 
 // Whether debug mode is on
-export function debugOn(member: GuildMember) {
-    return debuggers.has(member.id)
+export function debugOn(memberId: Snowflake) {
+    return debuggers.has(memberId)
 }
 
 // Toggle debug mode
-export function toggleDebug(member: GuildMember) {
-    debugOn(member) ? debuggers.delete(member.id) : debuggers.add(member.id)
+export function toggleDebug(memberId: Snowflake) {
+    debugOn(memberId) ? debuggers.delete(memberId) : debuggers.add(memberId)
+
+    console.debug(`Debug mode is now on for ${memberId}`)
 }

@@ -27,7 +27,7 @@ export function clearCaches() {
 export const getConfigsFromFirestore = async () => firestoreConfigs ??= await getField<{ [key: string] : string }>(discordElementsDocRef)
 export const getDebugData = async () => await getField<{ [key: string] : string }>(adminDocRef, Fields.DEBUG_DATA)
 export const getEndpoint = async () => await getField<string>(adminDocRef, Fields.ENDPOINT)
-export const getTicketOverrides = async () => await getField<{ [ticket: Snowflake] : Snowflake }>(ticketOverridesDocRef)
+export const getTicketOverrides = async () => await getField<{ [ticket: string] : Snowflake }>(ticketOverridesDocRef)
 export const getKeywordSubstitutions = async () => substitutions ??= await getField<{ [alternative: string] : string }>(substitutionsDocRef)
 export const getKeywordEmojiLists = async () => keywordToEmojiIDs ??= await getField<{ [agent: string] : string[] }>(keywordEmojisDocRef)
 

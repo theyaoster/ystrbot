@@ -57,21 +57,20 @@ export enum Fields {
     CURRENT_MESSAGE_ID = "current_message_id",
     SKIP_VOTES_NEEDED = "skip_votes_needed",
 
-    BANS = "bans",
-    PENDING = "pending",
-    LATEST = "latest",
-    FIRED_HISTORY = "fired_history",
+    ACTIVE = "active",
 }
 
 export type Ping = {
+    pingId: Snowflake,
     requesterId: Snowflake,
-    createdAt: number,
-    delayLeft?: number,
-    ttlLeft?: number,
+    messageId?: Snowflake,
+    createdAt: number, // timestamp
+    delayLeft?: number, // minutes
+    ttlLeft?: number, // minutes
     fired: boolean,
     mode?: string,
-    responseId?: Snowflake,
     responses: string[],
+    responseMessageId?: Snowflake,
 }
 
 export type AudioRequest = {

@@ -6,6 +6,8 @@ import _ from "underscore"
 import { patchNotesChannel, self, videoChannel } from "./lib/util/discord-utils"
 import { Fields } from "./config/firestore-schema"
 import { getYoutubeChannelId, getMostRecentPath, setMostRecentPath, getLatestVideoId, setLatestVideoId } from "./lib/firestore/job_data"
+import { cleanOldPings, decrementPings, allPings, removePing } from "./lib/firestore/pings"
+import { updateDelay, firePing, updateTtl } from "./lib/util/ping-utils"
 
 const VALORANT_BASE_URL = "https://playvalorant.com"
 const GAME_UPDATES_URL = VALORANT_BASE_URL + "/en-us/news/game-updates/"
@@ -73,6 +75,24 @@ async function checkForNewYoutubeVideo(channelIdField: string, getLastVideo: () 
 
 // Define jobs
 
+// Decrement ping timers for delay and TTL
+const pingUpdater = new CronJob("* * * * *", async () => {
+    await cleanOldPings()
+    await decrementPings()
+
+    const pings = await allPings()
+
+    for (const ping of pings) {
+        if (!_.isUndefined(ping.delayLeft) && !ping.fired) {
+            await updateDelay(ping.pingId) // Update delay message (before message ID gets updated to be the ping message)
+            if (ping.delayLeft <= 0) firePing(ping) // Delay complete
+        } else if (!_.isUndefined(ping.ttlLeft) && ping.fired && ping.ttlLeft >= 0) {
+            await updateTtl(ping.pingId) // Update TTL message (before it gets removed)
+            if (ping.ttlLeft <= 0) removePing(ping.pingId) // Ping expired - untrack it
+        }
+    }
+})
+
 // Check for new patch notes every hour
 const patchNotesUpdater = new CronJob("0 * * * *", () => {
     // Load game updates page
@@ -123,11 +143,12 @@ const valorantYoutubeUpdater = new CronJob("3-59/10 * * * *", () => checkForNewY
     Fields.VALORANT_CHANNEL_ID,
     () => getLatestVideoId(Fields.LAST_VALORANT_ID),
     newValue => setLatestVideoId(Fields.LAST_VALORANT_ID, newValue),
-    videoInfo => !_.isNull(videoInfo.videoDetails.title.match(VALORANT_TITLE_REGEX))
+    videoInfo => VALORANT_TITLE_REGEX.test(videoInfo.videoDetails.title)
 ))
 
 // Job trigger function
 export default function startJobs() {
+    pingUpdater.start()
     patchNotesUpdater.start()
     gamingYoutubeUpdater.start()
     valorantYoutubeUpdater.start()

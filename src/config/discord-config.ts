@@ -10,7 +10,7 @@ const debugConfig : Record<string, string> = {}
 
 export function getConfig(member?: GuildMember) {
     if (!member) return discordConfig
-    return debugOn(member) ? debugConfig : discordConfig
+    return debugOn(member.id) ? debugConfig : discordConfig
 }
 
 // Export this promise so other modules can block until the config is loaded

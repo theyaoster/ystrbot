@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
 import { getCurrentMessage, getCurrentRequest } from "../lib/firestore/audio_requests"
-import { generateBotPlayingMessage, playerIdle, skipRequest, voteSkip } from "../lib/trackers/audio-tracker"
+import { playerIdle, skipRequest, voteSkip, generateBotPlayingMessage } from "../lib/util/audio-request-utils"
 import { isAdmin, resolveInteraction } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()

@@ -20,7 +20,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
         return interaction.reply({ content: `No such command /${commandName}.`, ephemeral: true })
     }
 
-    commandUnban(member.user.username, commandName).then(succeeded => {
-        interaction.reply({ content: succeeded ? `${member.user.username} can now use /${commandName} again.` : `No changes made since ${member.user.username} is not banned from using /${commandName}.`, ephemeral: true })
+    commandUnban(member.user.username, commandName).then(() => {
+        interaction.reply({ content: `${member.user.username} can now use /${commandName}`, ephemeral: true })
     }).catch(console.error)
 }

@@ -46,7 +46,7 @@ async function performTestsForAuthenticatedUser(context: RulesTestContext) {
 
     const readOnlyDocs = READ_ONLY_PATHS.map(path => doc(db, path))
     const readUpdateOnlyDocs = READ_AND_UPDATE_ONLY_PATHS.map(path => doc(db, path))
-    const keysIdenticalFields = stringMap(KEYS_IDENTICAL_PATHS, [Fields.LAST_GAMING_ID, Fields.CURRENT_MESSAGE_ID, Fields.LATEST])
+    const keysIdenticalFields = stringMap(KEYS_IDENTICAL_PATHS, [Fields.LAST_GAMING_ID, Fields.CURRENT_MESSAGE_ID, Fields.ACTIVE])
 
     for (const roDoc of readOnlyDocs) {
         await assertFails(setDoc(roDoc, NEW_DATA_PAYLOAD))

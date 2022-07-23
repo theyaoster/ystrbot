@@ -109,7 +109,7 @@ export async function processAudioQueue() {
         }
     }
 
-    console.log("Queue complete.")
+    console.log("Audio queue complete.")
 
     resetConnection()
 }

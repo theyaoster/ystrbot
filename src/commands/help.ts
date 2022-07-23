@@ -11,7 +11,7 @@ export const data = new SlashCommandBuilder()
 // Modules to exclude when importing
 const HELP_DESC_OVERRIDE = "show this message again"
 const ADMIN_GROUP_NAME = "Admin commands"
-const GROUP_NAMES = ["LFG commands", "Registration/registered user comands", "Voice-related commands", "Miscellaneous"]
+const GROUP_NAMES = ["LFG commands", "Registration/registered user commands", "Voice-related commands", "Miscellaneous"]
 const GROUP_DEFINITONS : Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">[][] = [
     [commands.val.data, commands.yes.data, commands.iamafragl0rd.data, commands.iamnotafragl0rd.data],
     [commands.register.data, commands.unregister.data, commands.status.data, commands.contract.data, commands.ign.data],
