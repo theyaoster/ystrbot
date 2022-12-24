@@ -16,9 +16,9 @@ const INDEX_ATTRIBUTE = "data-transition-index"
 const VERSION_CAPTURE_REGEX = /^[a-z-\/]+valorant-patch-notes-([0-9-]+)\/$/
 
 const YOUTUBE_BASE_URL = "https://www.youtube.com"
-const YOUTUBE_CHANNEL_URL_BUILDER = (channelId: string) => `${YOUTUBE_BASE_URL}/channel/${channelId}/videos`
+const YOUTUBE_CHANNEL_URL_BUILDER = (channelId: string) => `${YOUTUBE_BASE_URL}/${channelId}/videos`
 const YOUTUBE_VIDEO_LINK_BUILDER = (videoId: string) => `https://youtu.be/${videoId}`
-const VIDEO_TITLE_LINK_FILTER = "a[id=\"video-title\"][href*=\"watch\"]"
+const VIDEO_TITLE_LINK_FILTER = "a[id=\"thumbnail\"][href*=\"watch\"]"
 const VALORANT_TITLE_REGEX = /((?:map|agent|skin).+(?:reveal|trailer))|(episode.+cinematic)/i
 
 // Helper methods

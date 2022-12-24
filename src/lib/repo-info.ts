@@ -5,6 +5,6 @@ const YSTR_DOWNLOAD_LINK = (tag: string) => `https://github.com/theyaoster/valor
 
 // Get download link for the latest .exe
 export async function getLatestExeLink() {
-    const { tag_name } = await got.get(YSTR_LATEST_RELEASE_URL).json()
+    const { tag_name } = await got.get(YSTR_LATEST_RELEASE_URL).json() as any
     return YSTR_DOWNLOAD_LINK(tag_name)
 }

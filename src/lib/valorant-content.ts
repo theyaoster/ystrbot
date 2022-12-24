@@ -17,7 +17,7 @@ const GAMEMODES : string[] = []
 // Get a list of all agent names (lower case)
 export async function fetchAgents() {
     if (_.isEmpty(AGENTS)) {
-        const { data } = await got.get(AGENT_ENDPOINT).json()
+        const { data } = await got.get(AGENT_ENDPOINT).json() as any
         for (const agentDatum of data) {
             AGENTS.push(agentDatum["displayName"].toLowerCase())
         }
@@ -35,7 +35,7 @@ export async function fetchGameModes() {
         GAMEMODES.push(...GAMEMODES_TO_ADD)
 
         // Fetch the rest from
-        const { data } = await got.get(GAMEMODE_ENDPOINT).json()
+        const { data } = await got.get(GAMEMODE_ENDPOINT).json() as any
         for (const modeDatum of data) {
             const gamemode = modeDatum["displayName"].toLowerCase()
             if (!GAMEMODES_TO_REMOVE.includes(gamemode)) {
