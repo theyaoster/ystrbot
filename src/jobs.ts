@@ -18,6 +18,7 @@ const VERSION_CAPTURE_REGEX = /^[a-z-\/]+valorant-patch-notes-([0-9-]+)\/$/
 const YOUTUBE_BASE_URL = "https://www.youtube.com"
 const YOUTUBE_CHANNEL_URL_BUILDER = (channelId: string) => `${YOUTUBE_BASE_URL}/${channelId}/videos`
 const YOUTUBE_VIDEO_LINK_BUILDER = (videoId: string) => `https://youtu.be/${videoId}`
+const VIDEO_ENTRY_FILTER = "div[id=\"dismissible\"]"
 const VIDEO_TITLE_LINK_FILTER = "a[id=\"thumbnail\"][href*=\"watch\"]"
 const VALORANT_TITLE_REGEX = /((?:map|agent|skin).+(?:reveal|trailer))|(episode.+cinematic)/i
 
@@ -43,8 +44,16 @@ async function checkForNewYoutubeVideo(channelIdField: string, getLastVideo: () 
     getPageContent(YOUTUBE_CHANNEL_URL_BUILDER(channelId), page => page.waitForNetworkIdle()).then(async content => {
         // Find latest youtube video
         const $ = load(content)
-        const entries = $(VIDEO_TITLE_LINK_FILTER).toArray()
-        const basicInfoPromises = entries.map(entry => ytdl.getBasicInfo(YOUTUBE_BASE_URL + entry.attribs["href"]))
+        const entries = $(VIDEO_ENTRY_FILTER).toArray()
+        const nonPremiereEntries = entries.filter(entry => {
+            const isPremiere = $("span[id=\"text\"]", entry).text().trim() === "UPCOMING" // Checks the displayed video runtime, which is UPCOMING for premieres
+
+            if (isPremiere) console.log(`Detected premiere: ${$(VIDEO_TITLE_LINK_FILTER, entry).attr("href")}`)
+
+            return !isPremiere
+        })
+
+        const basicInfoPromises = nonPremiereEntries.map(entry => ytdl.getBasicInfo(YOUTUBE_BASE_URL + $(VIDEO_TITLE_LINK_FILTER, entry).attr("href")))
         let basicInfoArray = await Promise.all(basicInfoPromises)
 
         // If a filter function was provided, run it

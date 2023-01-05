@@ -6789,17 +6789,17 @@ __metadata:
     typescript: ^4.6.4
     underscore: ^1.13.4
     xkcd-password: ^2.0.0
-    ytdl-core: ^4.11.0
+    ytdl-core: ^4.11.2
   languageName: unknown
   linkType: soft
 
-"ytdl-core@npm:^4.11.0":
-  version: 4.11.0
-  resolution: "ytdl-core@npm:4.11.0"
+"ytdl-core@npm:^4.11.2":
+  version: 4.11.2
+  resolution: "ytdl-core@npm:4.11.2"
   dependencies:
     m3u8stream: ^0.8.6
     miniget: ^4.2.2
     sax: ^1.1.3
-  checksum: 1ebe546da39e2a55fea6544d290f92f722416b77bb9c84322d5ca08394fb00642c6cf832ccac2feec12e9189a009af90e8185a96772e84c94599841ded21bd65
+  checksum: 57df38b5b1e4955db0e0c0be8d185f34de9eaee102ad1281d69de91628230cc84e8d46d278409eafa68c4aab4085a0f9fe8de30e9ea8644e011e20cae7f37c0e
   languageName: node
   linkType: hard
