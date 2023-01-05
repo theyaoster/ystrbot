@@ -11,6 +11,7 @@ const VOTE_FRACTION_NEEDED = 0.5
 const audioDocRef = doc(db, Collections.TRACKING, Documents.AUDIO)
 
 export const getQueue = async () => await getField<AudioRequest[]>(audioDocRef, Fields.QUEUE)
+export const clearQueue = async () => await setField<AudioRequest[]>(audioDocRef, Fields.QUEUE, [])
 export const getCurrentRequest = async () => await getField<AudioRequest>(audioDocRef, Fields.CURRENT_REQUEST)
 export const setCurrentMessageId = async (messageId: Snowflake) => await setField<Snowflake>(audioDocRef, Fields.CURRENT_MESSAGE_ID, messageId)
 export const getCurrentMessage = async (member?: GuildMember) => await message(await botChannel(member), await getField<Snowflake>(audioDocRef, Fields.CURRENT_MESSAGE_ID))

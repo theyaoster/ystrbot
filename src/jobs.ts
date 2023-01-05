@@ -1,5 +1,4 @@
 import { CronJob } from "cron"
-import puppeteer from "puppeteer"
 import ytdl from "ytdl-core"
 import { load } from "cheerio"
 import _ from "underscore"
@@ -8,6 +7,7 @@ import { Fields } from "./config/firestore-schema"
 import { getYoutubeChannelId, getMostRecentPath, setMostRecentPath, getLatestVideoId, setLatestVideoId } from "./lib/firestore/job_data"
 import { cleanOldPings, decrementPings, allPings, removePing } from "./lib/firestore/pings"
 import { updateDelay, firePing, updateTtl } from "./lib/util/ping-utils"
+import { getPageContent } from "./lib/util/scraping-utils"
 
 const VALORANT_BASE_URL = "https://playvalorant.com"
 const GAME_UPDATES_URL = VALORANT_BASE_URL + "/en-us/news/game-updates/"
@@ -23,21 +23,6 @@ const VIDEO_TITLE_LINK_FILTER = "a[id=\"thumbnail\"][href*=\"watch\"]"
 const VALORANT_TITLE_REGEX = /((?:map|agent|skin).+(?:reveal|trailer))|(episode.+cinematic)/i
 
 // Helper methods
-
-async function getPageContent(url: string, waitCondition: (page: puppeteer.Page) => any) {
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] })
-    const page = await browser.newPage()
-    await page.setCacheEnabled(false) // Just in case, disable caching
-    await page.goto(url)
-
-    // Wait for some condition - to avoid reading the page content before certain elements have loaded
-    await waitCondition(page)
-
-    const content = await page.content()
-    browser.close()
-
-    return content
-}
 
 async function checkForNewYoutubeVideo(channelIdField: string, getLastVideo: () => any, setLastVideo: (newValue: string) => any, filter?: (vidInfo: ytdl.videoInfo) => any) {
     const channelId = await getYoutubeChannelId(channelIdField)

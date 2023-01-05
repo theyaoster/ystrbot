@@ -3,16 +3,19 @@ import { GuildMember, Snowflake, VoiceChannel } from "discord.js"
 import _ from "underscore"
 import got from "got"
 import ytdl from "ytdl-core"
+import { load } from "cheerio"
 import { FFmpeg } from "prism-media"
 import { channel, guild, member, sendBotMessage } from "../util/discord-utils"
 import { nameFromDirectUrl, readableTimeSeconds, timeCode } from "../util/data-structure-utils"
 import { getCurrentRequest, getCurrentMessage, getQueue, popAudioRequest, pushAudioRequest, pushSkipVote, setCurrentMessageId, skipVotesNeeded, updateSkipVotesNeeded } from "../firestore/audio_requests"
 import { AudioRequest } from "../../config/firestore-schema"
+import { getPageContent, waitForDOMStable } from "./scraping-utils"
 
 const MAX_DURATION = 24 * 3600 * 1000 // ms
 const PADDING_FRAMES = 50
 const DEFAULT_PERCEIVED_LOUDNESS_MULTIPLIER = 0.5 // for ear safety
 
+const YOUTUBE_BASE_URL = "https://www.youtube.com"
 const YOUTUBE_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu.be\/)(?:[a-zA-Z0-9\-_]{11})(?:(?:\?|&)t=([0-9]+))?/
 const FFMPEG_OPUS_ARGUMENTS = ['-analyzeduration', '0', '-acodec', 'libopus', '-f', 'opus', '-ar', '48000', '-ac', '2']
 const FFMPEG_BASE_ARGUMENTS = ['-reconnect_streamed', '1', '-reconnect_at_eof', '1', '-reconnect_on_network_error', '1', '-reconnect_on_http_error', '4xx,5xx', '-reconnect_delay_max', '15', ...FFMPEG_OPUS_ARGUMENTS]
@@ -130,6 +133,30 @@ export async function createAudioRequest(requesterId: Snowflake, url: string, ch
     await pushAudioRequest(requestData)
 
     return requestData
+}
+
+// Fetch playlist contents and queue all
+export async function pushYtPlaylist(requesterId: Snowflake, url: string, channelId: Snowflake) {
+    const pageContent = await getPageContent(url, page => waitForDOMStable(page))
+
+    const $ = load(pageContent)
+    const playlistItems = $("a[id=\"video-title\"]").toArray()
+    if (playlistItems.length === 0) throw new Error(`Empty or nonexistent playlist: ${url}`)
+
+    const videoUrls = playlistItems.map(item => YOUTUBE_BASE_URL + item.attribs["href"].substring(0, item.attribs["href"].indexOf("&list")))
+    const progressMessage = await sendBotMessage(`Queueing up ${videoUrls.length} tracks: 0%`, await member(requesterId))
+
+    // Push audio requests one by one
+    let prevRequest : Promise<AudioRequest> | null = null
+    for (let i = 0 ; i < videoUrls.length ; i++) {
+        if (i > 0) await prevRequest
+        prevRequest = createAudioRequest(requesterId, videoUrls[i], channelId)
+        if (i === videoUrls.length - 1) await prevRequest
+
+        progressMessage.edit(progressMessage.content.substring(0, progressMessage.content.indexOf(":") + 2) + Math.round(100 * (i + 1) / videoUrls.length) + "%")
+    }
+
+    progressMessage.edit(`Queued ${videoUrls.length} songs from playlist ${url.substring(url.indexOf("?list=") + 6)}.`, )
 }
 
 // Generate message content based on votes

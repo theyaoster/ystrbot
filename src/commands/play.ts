@@ -1,9 +1,10 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, Client, GuildMember } from "discord.js"
-import { createAudioRequest, playerIdle, processAudioQueue } from "../lib/util/audio-request-utils"
+import { createAudioRequest, playerIdle, processAudioQueue, pushYtPlaylist } from "../lib/util/audio-request-utils"
 import { resolveInteraction } from "../lib/util/discord-utils"
 
 const VALID_URL_REGEX = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/
+const PLAYLIST_PREFIX = "https://www.youtube.com/playlist"
 
 export const data = new SlashCommandBuilder()
     .setName("play")
@@ -30,8 +31,17 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     // Enqueue this request
     const channelToJoin = channelOption ? channelOption : member.voice.channel!
     try {
-        await createAudioRequest(member.id, url, channelToJoin.id, duration)
-        resolveInteraction(interaction)
+        if (url.startsWith(PLAYLIST_PREFIX)) {
+            console.log(`Processing playlist of audio requests...`)
+
+            await resolveInteraction(interaction)
+            await pushYtPlaylist(member.id, url, channelToJoin.id)
+
+            console.log(`Done pushing playlist requests.`)
+        } else{
+            await resolveInteraction(interaction)
+            await createAudioRequest(member.id, url, channelToJoin.id, duration)
+        }
     } catch (error: any) {
         console.error(`Error in /play while queuing request: ${error.stack}`)
 
