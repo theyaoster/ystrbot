@@ -48,7 +48,8 @@ export async function isBot(member: GuildMember | null) {
 
 // Get the preferred nickname of a member if possible (otherwise get their username)
 export function preferredName(member: GuildMember) {
-    return member.nickname ? member.nickname : member.user.username
+    console.debug(`nickname: ${member.nickname}, displayName: ${member.displayName}, username: ${member.user.username}`)
+    return member.nickname ? member.nickname : member.displayName
 }
 
 // Gets an emoji object by name

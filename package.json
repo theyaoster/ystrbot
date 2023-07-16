@@ -63,13 +63,16 @@
     "string-similarity": "^4.0.4",
     "underscore": "^1.13.4",
     "xkcd-password": "^2.0.0",
-    "ytdl-core": "^4.11.2"
+    "ytdl-core": "^4.11.5"
   },
   "resolutions": {
     "async": "^2.6.4",
-    "protobufjs": "^6.11.3",
-    "undici": "^5.8.2",
-    "node-fetch": "2.6.6"
+    "protobufjs": "^7.2.4",
+    "undici": "^5.19.1",
+    "node-fetch": "^2.6.6",
+    "http-cache-semantics": "^4.1.1",
+    "luxon": "^1.28.1",
+    "json5": "^2.2.2"
   },
   "packageManager": "yarn@3.2.0"
 }
