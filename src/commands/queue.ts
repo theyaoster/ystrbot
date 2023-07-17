@@ -1,6 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js"
-import _ from "underscore"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import { getCurrentRequest, getQueue } from "../lib/firestore/audio_requests"
 import { playerIdle, requestToString } from "../lib/util/audio-request-utils"
 import { sendBotMessage } from "../lib/util/discord-utils"
@@ -11,7 +10,7 @@ export const data = new SlashCommandBuilder()
     .setName("queue")
     .setDescription("view the queue of audio requests")
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     const queue = await getQueue()
     const current = await getCurrentRequest()
     const member = interaction.member as GuildMember

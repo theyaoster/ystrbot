@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, SnowflakeUtil } from "discord.js"
+import { ChatInputCommandInteraction, Client, SnowflakeUtil } from "discord.js"
 import _ from "underscore"
 import { commandFromTextChannel, resolveInteraction } from "../lib/util/discord-utils"
 import { findBestMatch } from "string-similarity"
@@ -20,7 +20,7 @@ export const data = new SlashCommandBuilder()
     .addIntegerOption(option => option.setName("ttl_in_min").setDescription("How long this ping will be up for before being marked as expired.").setRequired(false))
     .addStringOption(option => option.setName("mode").setDescription("The mode you want to play (unrated, comp, custom, etc.).").setRequired(false))
 
-export async function execute(interaction: CommandInteraction, __: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, __: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     // Validate params
@@ -36,7 +36,7 @@ export async function execute(interaction: CommandInteraction, __: Client) {
     const requesterId = interaction.user.id
 
     // Create and store ping obj
-    const ping : Ping = { pingId: SnowflakeUtil.generate(), requesterId, createdAt: Date.now(), fired: false, responses: [] }
+    const ping : Ping = { pingId: SnowflakeUtil.generate().toString(), requesterId, createdAt: Date.now(), fired: false, responses: [] }
     if (mode) ping.mode = mode
     if (delay) ping.delayLeft = delay
     if (ttl) ping.ttlLeft = ttl
@@ -57,7 +57,7 @@ export async function execute(interaction: CommandInteraction, __: Client) {
 }
 
 // Helper for retrieving an integer parameter and checking if it's within bounds, if not it returns null
-function getBoundedIntegerParam(paramName: string, min: number, max: number, interaction: CommandInteraction) {
+function getBoundedIntegerParam(paramName: string, min: number, max: number, interaction: ChatInputCommandInteraction) {
     const rawValue = interaction.options.getInteger(paramName)
     if (rawValue && (rawValue < min || rawValue > max)) {
         interaction.reply({ content: `${paramName} must be between ${min} and ${max}, inclusive.`, ephemeral: true })

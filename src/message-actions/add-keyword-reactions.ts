@@ -1,10 +1,10 @@
-import { Client, GuildEmoji, Message } from "discord.js"
+import { GuildEmoji, Message } from "discord.js"
 import _ from "underscore"
+import { getKeywordEmojiLists, getKeywordSubstitutions } from "../lib/firestore/configuration"
 import { nameToEmoji, withoutEmojis } from "../lib/util/data-structure-utils"
 import { guild, isBot } from "../lib/util/discord-utils"
-import { getKeywordSubstitutions, getKeywordEmojiLists } from "../lib/firestore/configuration"
 
-export async function execute(message: Message, __: Client) {
+export async function execute(message: Message) {
     const content = withoutEmojis(message.content.toLowerCase())
 
     // Don't react to emoji-only messages or bot messages

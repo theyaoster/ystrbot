@@ -1,4 +1,4 @@
-import { Client, Message, TextChannel } from "discord.js"
+import { Message, TextChannel } from "discord.js"
 import { getConfig, waitForDiscordConfig } from "../config/discord-config"
 import { countdown, isBot } from "../lib/util/discord-utils"
 
@@ -14,7 +14,7 @@ async function waitForConfig() {
 
 waitForConfig()
 
-export async function execute(message: Message, __: Client) {
+export async function execute(message: Message) {
     // Skip if the message was sent by the bot
     if (!message.channelId || !CHANNELS_TO_KEEP_CLEAN.includes(message.channelId) || (await isBot(message.member))) {
         return

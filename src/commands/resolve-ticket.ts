@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, GuildMember, ThreadChannel } from "discord.js"
+import { ChatInputCommandInteraction, Client, GuildMember, ThreadChannel } from "discord.js"
 import { getConfig } from "../config/discord-config"
 import { isTicketAuthor, removeTicket } from "../lib/firestore/admin"
 import { getTicketOverrides } from "../lib/firestore/configuration"
@@ -11,7 +11,7 @@ export const data = new SlashCommandBuilder()
     .setDescription("resolve a ticket you created (ADMIN)")
     .addBooleanOption(option => option.setName("accepted").setDescription("Whether the ticket was accepted.").setRequired(true))
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     if (!commandFromTextChannelThread(interaction)) return
 
     // Authorization check

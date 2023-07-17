@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client } from "discord.js"
+import { ChatInputCommandInteraction, Client } from "discord.js"
 import { findBestMatch } from "string-similarity"
 import _ from "underscore"
 import { getPlayerContractInternal, setPlayerContractInternal } from "../lib/firestore/game_data"
@@ -14,7 +14,7 @@ export const data = new SlashCommandBuilder()
     .setDescription("set your in-game contract to a specified agent")
     .addStringOption(option => option.setName("agent").setDescription("The name of the agent (e.g. Astra, Breach) whose contract you want to activate.").setRequired(true))
 
-export async function execute(interaction: CommandInteraction, __: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, __: Client) {
     const name = interaction.user.username
     const allAgents = await fetchAgents()
     const agentInput = interaction.options.getString("agent", true)

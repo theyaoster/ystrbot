@@ -9,7 +9,7 @@ export function debugOn(memberId: Snowflake) {
 
 // Toggle debug mode
 export function toggleDebug(memberId: Snowflake) {
-    let on = debugOn(memberId)
+    const on = debugOn(memberId)
     if (on) {
         debuggers.delete(memberId)
     } else {

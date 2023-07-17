@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, GuildMember } from "discord.js"
-import { addResponse, latestPing, } from "../lib/firestore/pings"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
+import { addResponse, latestPing } from "../lib/firestore/pings"
 import { commandFromTextChannel, resolveInteraction } from "../lib/util/discord-utils"
 import { updateResponseMessage } from "../lib/util/ping-utils"
 
@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
     .setName("yes")
     .setDescription("say you're down to play (to the most recent /val that has pinged @fragl0rds)")
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     let latest = await latestPing()

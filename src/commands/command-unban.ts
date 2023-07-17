@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import { commandUnban } from "../lib/firestore/admin"
-import { isAdmin, isCommand } from "../lib/util/discord-utils"
+import { isAdmin, isCommand, member } from "../lib/util/discord-utils"
 import { unauthorizedOops } from "../lib/util/error-responses"
 
 export const data = new SlashCommandBuilder()
@@ -10,8 +10,9 @@ export const data = new SlashCommandBuilder()
     .addUserOption(option => option.setName("user").setDescription("the user to unbanhammer").setRequired(true))
     .addStringOption(option => option.setName("command_name").setDescription("if the command is /foo, type foo here").setRequired(true))
 
-export async function execute(interaction: CommandInteraction, _: Client) {
-    const member = interaction.options.getMember("user", true) as GuildMember
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
+    const user = interaction.options.getUser("user", true)
+    const mem = await member(user.id)
     const commandName = interaction.options.getString("command_name", true)
 
     if (!(await isAdmin(interaction.member as GuildMember))) {
@@ -20,7 +21,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
         return interaction.reply({ content: `No such command /${commandName}.`, ephemeral: true })
     }
 
-    commandUnban(member.user.username, commandName).then(() => {
-        interaction.reply({ content: `${member.user.username} can now use /${commandName}`, ephemeral: true })
+    commandUnban(mem.user.username, commandName).then(() => {
+        interaction.reply({ content: `${mem.user.username} can now use /${commandName}`, ephemeral: true })
     }).catch(console.error)
 }

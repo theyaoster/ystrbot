@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, GuildMember } from "discord.js"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import _ from "underscore"
-import { commandFromTextChannel, findEmoji, sendBotMessage } from "../lib/util/discord-utils"
 import { getPlayerStatuses } from "../lib/firestore/game_data"
+import { commandFromTextChannel, findEmoji, sendBotMessage } from "../lib/util/discord-utils"
 
 const STATUS_MESSAGE_TIMEOUT = 15 //seconds
 const PADDING_CHARACTERS = 5
@@ -11,7 +11,7 @@ export const data = new SlashCommandBuilder()
     .setName("status")
     .setDescription("see the in-game status of all registered players (offline players will be hidden)")
 
-export async function execute(interaction: CommandInteraction, __: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, __: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     getPlayerStatuses().then(statuses => {

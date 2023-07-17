@@ -1,16 +1,16 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction, GuildMember, TextChannel } from "discord.js"
-import { commandFromTextChannel } from "../lib/util/discord-utils"
+import { ChatInputCommandInteraction, Client, GuildMember, TextChannel } from "discord.js"
 import { getConfig } from "../config/discord-config"
 import { trackTicket } from "../lib/firestore/admin"
 import { getTicketOverrides } from "../lib/firestore/configuration"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("ticket")
     .setDescription("submit feedback, bug reports, feature suggestions, etc")
     .addStringOption(option => option.setName("description").setDescription("enter ticket content here").setRequired(true))
 
-export async function execute(interaction: CommandInteraction, client: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, client: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     const ticketOverrides = await getTicketOverrides()

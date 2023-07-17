@@ -1,4 +1,4 @@
-import dotenv from "dotenv"
+const dotenv = require("dotenv").config()
 
 // Custom required environment variables
 const LOCAL_ENV_VARIABLE_NAMES = [
@@ -15,11 +15,7 @@ const LOCAL_ENV_VARIABLE_NAMES = [
     "DEBUGGERS",
 ]
 
-// Attempt to load variables from local .env
-const loadLocalConfigResult = dotenv.config()
-
-const configVariables = process.env
-if (loadLocalConfigResult.error) {
+if (dotenv.error) {
     console.log(`No .env file found - will assume environment variables are already present.`)
 } else {
     console.log(`Loaded configs from .env.`)
@@ -27,8 +23,8 @@ if (loadLocalConfigResult.error) {
 
 const config: Record<string, string> = {}
 LOCAL_ENV_VARIABLE_NAMES.forEach(varName => {
-    if (configVariables[varName]) {
-        config[varName] = configVariables[varName]!
+    if (process.env[varName]) {
+        config[varName] = process.env[varName]!
     } else {
         console.debug(`No value provided for environment variable ${varName}.`)
     }

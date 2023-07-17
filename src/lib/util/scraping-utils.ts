@@ -1,8 +1,8 @@
-import puppeteer from "puppeteer"
+import * as puppeteer from "puppeteer"
 
 // Fetch content of a page
 export async function getPageContent(url: string, waitCondition: (page: puppeteer.Page) => any) {
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] })
+    const browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: "new" })
     const page = await browser.newPage()
     await page.setCacheEnabled(false) // Just in case, disable caching
     await page.goto(url)

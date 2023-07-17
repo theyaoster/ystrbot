@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import _ from "underscore"
 import { isAdmin } from "../lib/util/discord-utils"
 import * as commands from "./index"
@@ -17,12 +17,13 @@ const GROUP_DEFINITONS : Omit<SlashCommandBuilder, "addSubcommand" | "addSubcomm
     [commands.register.data, commands.unregister.data, commands.status.data, commands.contract.data, commands.ign.data],
     [commands.play.data, commands.skip.data, commands.queue.data, commands.clear_queue.data],
     [data, commands.cap.data, commands.ticket.data, commands.resolve_ticket.data],
-    [commands.command_ban.data, commands.command_unban.data, commands.silence.data, commands.debug.data],
+    [commands.command_ban.data, commands.command_unban.data, commands.silence.data, commands.debug.data, commands.clear.data],
 ]
 
-export async function execute(interaction: CommandInteraction, __: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, __: Client) {
     const groupNames = Object.assign([], GROUP_NAMES)
-    if (await isAdmin(interaction.member as GuildMember)) groupNames.push(ADMIN_GROUP_NAME)
+    const member = interaction.member as GuildMember
+    if (await isAdmin(member)) groupNames.push(ADMIN_GROUP_NAME)
 
     let commandList = ""
     for (const i of _.range(groupNames.length)) {
@@ -37,5 +38,6 @@ export async function execute(interaction: CommandInteraction, __: Client) {
 
     const helpMessage = `**NOTE:** *If you're registered and are using the VALORANT-ystr client, and need to manually change your config or want to view debug logs, check for them in* \`%APPDATA%\\VALORANT-ystr\`\n\n${commandList.trimEnd()}`
 
-    interaction.reply({ content: helpMessage, ephemeral: true })
+    member.send(helpMessage) // DM command details
+    interaction.reply({ content: "Check your DMs, commands are listed there.", ephemeral: true })
 }

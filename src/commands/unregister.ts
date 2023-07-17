@@ -1,13 +1,13 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel } from "../lib/util/discord-utils"
+import { ChatInputCommandInteraction, Client } from "discord.js"
 import { unregisterPlayer } from "../lib/firestore/game_data"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("unregister")
     .setDescription("delete your registered account")
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     unregisterPlayer(interaction.user.username).then(_ => {

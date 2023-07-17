@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client } from "discord.js"
+import { ChatInputCommandInteraction, Client } from "discord.js"
 import { getPlayerIgn } from "../lib/firestore/game_data"
 import { sleepSeconds } from "../lib/util/async-utils"
 
@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
     .setDescription("show your IGN (or that of another registered user) for 30s")
     .addUserOption(option => option.setName("player").setDescription("A registered user.").setRequired(false))
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     const user = interaction.options.getUser("player") || interaction.user
 
     getPlayerIgn(user.username).then(async ign => {

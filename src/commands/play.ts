@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js"
+import { ChannelType, ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import { createAudioRequest, playerIdle, processAudioQueue, pushYtPlaylist } from "../lib/util/audio-request-utils"
 import { resolveInteraction } from "../lib/util/discord-utils"
 
@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
     .addChannelOption(option => option.setName("channel").setDescription("The voice channel to play in.").setRequired(false))
     .addIntegerOption(option => option.setName("duration").setDescription("How many seconds to play the audio for.").setRequired(false))
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     const member = interaction.member as GuildMember
     const url = interaction.options.getString("url", true)
     const channelOption = interaction.options.getChannel("channel")
@@ -22,10 +22,10 @@ export async function execute(interaction: CommandInteraction, _: Client) {
     // Validate inputs
     if (!VALID_URL_REGEX.test(url)) {
         return interaction.reply({ content: "That doesn't looks like a valid URL...", ephemeral: true })
-    } else if (channelOption && channelOption.type != "GUILD_VOICE") {
+    } else if (channelOption && channelOption.type !== ChannelType.GuildVoice) {
         return interaction.reply({ content: "The channel you provide needs to be a voice channel.", ephemeral: true })
     } else if (!channelOption && !member.voice.channel) {
-        return interaction.reply({ content: "You need to be in a voice channel.", ephemeral: true })
+        return interaction.reply({ content: "You need to be in a voice channel (or specify a voice channel).", ephemeral: true })
     }
 
     // Enqueue this request
@@ -38,7 +38,7 @@ export async function execute(interaction: CommandInteraction, _: Client) {
             await pushYtPlaylist(member.id, url, channelToJoin.id)
 
             console.log(`Done pushing playlist requests.`)
-        } else{
+        } else {
             await resolveInteraction(interaction)
             await createAudioRequest(member.id, url, channelToJoin.id, duration)
         }

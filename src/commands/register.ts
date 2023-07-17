@@ -1,15 +1,15 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { Client, CommandInteraction } from "discord.js"
-import { commandFromTextChannel } from "../lib/util/discord-utils"
-import { getLatestExeLink } from "../lib/repo-info"
+import { ChatInputCommandInteraction, Client } from "discord.js"
 import { getEndpoint } from "../lib/firestore/configuration"
 import { registerPlayer } from "../lib/firestore/game_data"
+import { getLatestExeLink } from "../lib/repo-info"
+import { commandFromTextChannel } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("register")
     .setDescription("register an account for using ystrbot and VALORANT-ystr functionality")
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     const name = interaction.user.username

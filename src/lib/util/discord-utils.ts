@@ -1,4 +1,4 @@
-import { CommandInteraction, Client, GuildMember, TextChannel, Message, Guild, Snowflake } from "discord.js"
+import { CommandInteraction, Client, GuildMember, TextChannel, Message, Guild, Snowflake, ChannelType, GatewayIntentBits } from "discord.js"
 import _ from "underscore"
 import { useTextChannelOops, useTextChannelThreadOops } from "./error-responses"
 import { getConfig, waitForDiscordConfig } from "../../config/discord-config"
@@ -8,10 +8,10 @@ import { sleep, sleepSeconds } from "./async-utils"
 // Auxiliary discord client for fetching resources
 const client = new Client({
     intents: [
-        "GUILDS",
-        "GUILD_MEMBERS",
-        "GUILD_MESSAGES",
-        "GUILD_VOICE_STATES",
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates,
     ]
 })
 
@@ -48,7 +48,6 @@ export async function isBot(member: GuildMember | null) {
 
 // Get the preferred nickname of a member if possible (otherwise get their username)
 export function preferredName(member: GuildMember) {
-    console.debug(`nickname: ${member.nickname}, displayName: ${member.displayName}, username: ${member.user.username}`)
     return member.nickname ? member.nickname : member.displayName
 }
 
@@ -88,7 +87,7 @@ export function commandFromTextChannel(interaction: CommandInteraction) {
         return false
     }
     const channel = client.channels.cache.get(interaction.channelId)
-    if (!channel || channel.type !== "GUILD_TEXT") {
+    if (!channel || channel.type !== ChannelType.GuildText) {
         useTextChannelOops(interaction)
         return false
     }
@@ -102,7 +101,7 @@ export function commandFromTextChannelThread(interaction: CommandInteraction) {
         return false
     }
     const channel = client.channels.cache.get(interaction.channelId)
-    if (!channel || !["GUILD_PUBLIC_THREAD", "GUILD_PRIVATE_THREAD"].includes(channel.type)) {
+    if (!channel || ![ChannelType.GuildPublicThread, ChannelType.GuildPrivateThread].includes(channel.type)) {
         useTextChannelThreadOops(interaction)
         return false
     }

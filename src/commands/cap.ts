@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember, TextChannel } from "discord.js"
+import { Client, GuildMember, TextChannel, ChatInputCommandInteraction } from "discord.js"
 import { nameToEmoji } from "../lib/util/data-structure-utils"
 import { getLatestMessage, isBot, resolveInteraction } from "../lib/util/discord-utils"
 
@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
     .setDescription("show you feel lied to, cheated, or deceived")
     .addUserOption(option => option.setName("capper").setDescription("the one who is capping").setRequired(false))
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     const member = interaction.options.getMember("capper")
 
     // Bots never cap

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import { getConfig } from "../config/discord-config"
 import { commandFromTextChannel, findEmoji } from "../lib/util/discord-utils"
 
@@ -7,7 +7,7 @@ export const data = new SlashCommandBuilder()
     .setName("iamnotafragl0rd")
     .setDescription("remove yourself from @fragl0rds")
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     if (!commandFromTextChannel(interaction)) return
 
     const member = interaction.member as GuildMember

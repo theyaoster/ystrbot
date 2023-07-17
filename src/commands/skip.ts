@@ -1,14 +1,14 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, Client, GuildMember } from "discord.js"
+import { ChatInputCommandInteraction, Client, GuildMember } from "discord.js"
 import { getCurrentMessage, getCurrentRequest } from "../lib/firestore/audio_requests"
-import { playerIdle, skipRequest, voteSkip, generateBotPlayingMessage } from "../lib/util/audio-request-utils"
+import { generateBotPlayingMessage, playerIdle, skipRequest, voteSkip } from "../lib/util/audio-request-utils"
 import { isAdmin, resolveInteraction } from "../lib/util/discord-utils"
 
 export const data = new SlashCommandBuilder()
     .setName("skip")
     .setDescription("vote to skip what's currently playing (votes are not needed if you requested it)")
 
-export async function execute(interaction: CommandInteraction, _: Client) {
+export async function execute(interaction: ChatInputCommandInteraction, _: Client) {
     const member = interaction.member as GuildMember
 
     if (playerIdle()) {
