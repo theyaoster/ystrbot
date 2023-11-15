@@ -6,4 +6,6 @@ build
 .yarn/cache
 .yarn/install-state.gz
 .yarn/unplugged
+.yarn/plugins
+.cache
 coverage/

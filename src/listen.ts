@@ -1,6 +1,6 @@
 import express from "express"
 import _ from "underscore"
-import { setPlayerStatus, getPlayerContract, setPlayerContract, setPlayerGameData } from "./lib/firestore/game_data"
+import { setPlayerStatus, setPlayerGameData } from "./lib/firestore/game_data"
 import { getConfig, signInAndLoadDiscordConfig, waitForDiscordConfig } from "./config/discord-config"
 import { GuildMember, Role } from "discord.js"
 import { Fields } from "./config/firestore-schema"
@@ -15,8 +15,6 @@ const BACKLOG = 511 // default
 const NAME_KEY = "name"
 
 const LIVE_STATUS_REQUIRED_FIELDS = [NAME_KEY, Fields.STATUS, Fields.SECRET]
-const GET_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET]
-const PUT_CONTRACT_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.CONTRACT_AGENT]
 const PUT_PLAYER_REQUIRED_FIELDS = [NAME_KEY, Fields.SECRET, Fields.IGN]
 
 // Status code regexes
@@ -74,26 +72,6 @@ APP.put("/live_status", async (request, response) => {
         }
     }).catch(error => {
         console.error(`Error occurred while setting player status: ${error}`)
-    })
-})
-
-APP.get("/contract", async (request, response) => {
-    await validateRequest(request, response, GET_CONTRACT_REQUIRED_FIELDS)
-
-    getPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET]).then(async agent => {
-        response.json({ contract_agent: agent })
-    }).catch(error => {
-        console.error(`Error occurred while getting contract for '${request.body[NAME_KEY]}': ${error}`)
-    })
-})
-
-APP.put("/contract", async (request, response) => {
-    await validateRequest(request, response, PUT_CONTRACT_REQUIRED_FIELDS)
-
-    setPlayerContract(request.body[NAME_KEY], request.body[Fields.SECRET], request.body[Fields.CONTRACT_AGENT]).then(async () => {
-        response.json({ message: `Updated contract agent for ${request.body[NAME_KEY]} to ${request.body[Fields.CONTRACT_AGENT]}.` })
-    }).catch(error => {
-        console.error(`Error occurred while updating contract for '${request.body[NAME_KEY]}': ${error}`)
     })
 })
 

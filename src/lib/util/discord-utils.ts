@@ -12,6 +12,8 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.MessageContent,
     ]
 })
 
@@ -46,11 +48,6 @@ export async function isBot(member: GuildMember | null) {
     return (!_.isNull(member) && member.roles.cache.has((await botRole()).id)) || member?.user.bot
 }
 
-// Get the preferred nickname of a member if possible (otherwise get their username)
-export function preferredName(member: GuildMember) {
-    return member.nickname ? member.nickname : member.displayName
-}
-
 // Gets an emoji object by name
 export function findEmoji(alias: string) {
     return client.emojis.cache.find(e => e.name === alias)
@@ -73,7 +70,7 @@ export async function resolveInteraction(interaction: CommandInteraction) {
 export function getLatestMessage(channel: TextChannel, member?: GuildMember) {
     if (member) {
         const lastMsg = channel.messages.cache.find(msg => msg.author.id === member.id)
-        if (!lastMsg) console.log(`Failed to find last message by ${preferredName(member)} in ${channel.name}.`)
+        if (!lastMsg) console.log(`Failed to find last message by ${member.displayName} in ${channel.name}.`)
         return lastMsg
     }
 

@@ -26,6 +26,7 @@ function initializeBot() {
             GatewayIntentBits.DirectMessages,
             GatewayIntentBits.GuildMessageReactions,
             GatewayIntentBits.GuildVoiceStates,
+            GatewayIntentBits.GuildPresences,
         ]
     })
 

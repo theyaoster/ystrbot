@@ -38,7 +38,6 @@ export enum Fields {
     DEBUG_DATA = "debug_data",
     ENDPOINT = "endpoint",
 
-    CONTRACT_AGENT = "contract_agent",
     IGN = "ign",
     STATUS = "status",
     STATUS_CODE = "status_code",

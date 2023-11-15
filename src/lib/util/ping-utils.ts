@@ -1,6 +1,6 @@
 import _ from "underscore"
 import { GuildMember, GuildMemberRoleManager, MessageType, Snowflake } from "discord.js"
-import { member, message, pingChannel, preferredName, valRole } from "../util/discord-utils"
+import { member, message, pingChannel, valRole } from "../util/discord-utils"
 import { Ping } from "../../config/firestore-schema"
 import { nameToEmoji, numToEmoji, readableArray, readableTimeMinutes } from "../util/data-structure-utils"
 import { fetchPing, markFired, setMessageId, setResponseMessageId } from "../firestore/pings"
@@ -11,7 +11,7 @@ async function buildBaseText(ping: Ping) {
     const role = await valRole(pinger)
 
     const modeString = ping.mode ? ` (**${ping.mode}**)` : ""
-    return `${preferredName(pinger)} - ${role}${modeString}`
+    return `${pinger.displayName} - ${role}${modeString}`
 }
 
 // Helper for generating delay message text
@@ -19,7 +19,7 @@ async function buildDelayText(ping: Ping) {
     if (!_.isUndefined(ping.delayLeft)) {
         const pinger = await member(ping.requesterId)
         const suffix = ping.delayLeft > 0 ? `in **${readableTimeMinutes(ping.delayLeft)}**. ${nameToEmoji("eyes")}` : `**now** (ping is below). ${nameToEmoji("tada")}`
-        return `${preferredName(pinger)} wants to play ${suffix}`
+        return `${pinger.displayName} wants to play ${suffix}`
     } else {
         throw Error(`Cannot build delay text as ping has no set delay: ${ping}`)
     }
@@ -119,7 +119,7 @@ export async function updateResponseMessage(pingId: Snowflake, pinger?: GuildMem
     // Update the response string (or send it)
     const channel = await pingChannel(pinger)
     const pingMessage = await message(channel, ping.messageId!)
-    const responderString = readableArray(await Promise.all(ping.responses.map(async memberId => preferredName(await member(memberId)))))
+    const responderString = readableArray(await Promise.all(ping.responses.map(async memberId => (await member(memberId)).displayName)))
     const newResponseText = `${responderString} ${ping.responses.length === 1 ? "is" : "are"} down`
 
     if (ping.responseMessageId) {

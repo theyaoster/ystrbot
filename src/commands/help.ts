@@ -14,7 +14,7 @@ const ADMIN_GROUP_NAME = "Admin commands"
 const GROUP_NAMES = ["LFG commands", "Registration/registered user commands", "Voice-related commands", "Miscellaneous"]
 const GROUP_DEFINITONS : Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">[][] = [
     [commands.val.data, commands.yes.data, commands.iamafragl0rd.data, commands.iamnotafragl0rd.data],
-    [commands.register.data, commands.unregister.data, commands.status.data, commands.contract.data, commands.ign.data],
+    [commands.register.data, commands.unregister.data, commands.status.data, commands.ign.data],
     [commands.play.data, commands.skip.data, commands.queue.data, commands.clear_queue.data],
     [data, commands.cap.data, commands.ticket.data, commands.resolve_ticket.data],
     [commands.command_ban.data, commands.command_unban.data, commands.silence.data, commands.debug.data, commands.clear.data],
